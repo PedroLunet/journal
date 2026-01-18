@@ -57,6 +57,8 @@
 	});
 
 	function handleMouseMove(e: MouseEvent) {
+		if (window.innerWidth < 768) return;
+
 		const mouseX = e.clientX;
 		const mouseY = e.clientY;
 		const radius = 200;
