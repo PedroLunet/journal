@@ -41,7 +41,7 @@
 				on:click={() => console.log('Clicked:', formatDateId(day))}
 			>
 				<div
-					class="h-1 w-1 rounded-full bg-rose transition-all duration-300 group-hover:scale-[3]
+					class="h-1 w-1 rounded-full bg-rose transition-all duration-500 group-hover:scale-[3]
                     {isToday(day) ? 'ring-1 ring-rose ring-offset-4 ring-offset-iridium' : ''}"
 				></div>
 			</button>
