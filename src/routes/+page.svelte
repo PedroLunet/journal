@@ -37,6 +37,8 @@
 	};
 
 	// --- ANIMATION LOGIC ---
+	// Note: We don't need $state() here because we are reading/writing
+	// these values directly in the event handler for performance.
 	let dotElements: HTMLElement[] = [];
 	let dotPositions: { x: number; y: number }[] = [];
 
@@ -99,13 +101,13 @@
 	}
 </script>
 
-<svelte:window on:resize={updatePositions} />
+<svelte:window onresize={updatePositions} />
 
 <div
 	class="h-full w-full"
 	role="application"
-	on:mousemove={handleMouseMove}
-	on:mouseleave={resetGrid}
+	onmousemove={handleMouseMove}
+	onmouseleave={resetGrid}
 >
 	<div
 		class="
@@ -120,7 +122,7 @@
 				class="group relative flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ease-out will-change-transform"
 				aria-label={day.toDateString()}
 				title={day.toDateString()}
-				on:click={() => console.log('Clicked:', formatDateId(day))}
+				onclick={() => console.log('Clicked:', formatDateId(day))}
 			>
 				{#if isFirstOfMonth(day)}
 					<span
