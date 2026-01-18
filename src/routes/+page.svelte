@@ -21,7 +21,11 @@
 
 <div class="h-full w-full">
 	<div
-		class="grid h-full w-full grid-cols-[repeat(19,1fr)] place-content-evenly place-items-center"
+		class="
+            grid h-auto w-full
+            grid-cols-10 place-items-center gap-y-8 py-10
+            sm:h-full sm:grid-cols-[repeat(19,1fr)] md:place-content-evenly md:gap-y-0 md:py-0
+        "
 	>
 		{#each allDays as day}
 			<button
