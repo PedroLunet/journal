@@ -61,7 +61,6 @@
 			const dy = pos.y - mouseY;
 			const distance = Math.sqrt(dx * dx + dy * dy);
 
-
 			if (distance >= radius) {
 				if (el.style.transform) el.style.transform = '';
 				return;
@@ -108,7 +107,7 @@
 		{#each allDays as day, i}
 			<button
 				bind:this={dotElements[i]}
-				class="group flex h-8 w-8 items-center justify-center rounded-full will-change-transform"
+				class="group flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-400 ease-out will-change-transform"
 				aria-label={day.toDateString()}
 				title={day.toDateString()}
 				on:click={() => console.log('Clicked:', formatDateId(day))}
