@@ -29,11 +29,14 @@
 	>
 		{#each allDays as day}
 			<button
-				class="h-1 w-1 rounded-full bg-rose transition-all duration-300 hover:scale-[3]"
+				class="group flex h-8 w-8 items-center justify-center rounded-full"
 				aria-label={day.toDateString()}
 				title={day.toDateString()}
 				on:click={() => console.log('Clicked:', formatDateId(day))}
 			>
+				<div
+					class="h-1 w-1 rounded-full bg-rose transition-all duration-300 group-hover:scale-[3]"
+				></div>
 			</button>
 		{/each}
 	</div>
