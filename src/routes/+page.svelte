@@ -24,12 +24,15 @@
 		return date.toDateString() === today.toDateString();
 	};
 
+	const isFuture = (date: Date) => {
+		return date > today;
+	};
+
 	const getMonthLetter = (date: Date) => {
 		return date.toLocaleString('default', { month: 'narrow' });
 	};
 
 	const isFirstOfMonth = (date: Date) => {
-		// We still skip Jan 1st so the top-left corner doesn't look cluttered
 		return date.getDate() === 1 && date.getMonth() !== 0;
 	};
 
@@ -130,9 +133,11 @@
                     {isToday(day)
 						? 'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-500 group-hover:scale-[2]'
 						: 'duration-250 group-hover:scale-[3]'}
-                        {isFirstOfMonth(day)
+                    
+                    {isFirstOfMonth(day)
 						? 'shadow-[0_0_10px_2px_var(--color-rose)] group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)]'
-						: ''}"
+						: ''}
+                    {isFuture(day) ? 'opacity-30' : ''}"
 				></div>
 			</button>
 		{/each}
