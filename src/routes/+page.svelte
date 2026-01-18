@@ -24,8 +24,16 @@
 		return date.toDateString() === today.toDateString();
 	};
 
-	// --- ANIMATION LOGIC ---
+	const getMonthLetter = (date: Date) => {
+		return date.toLocaleString('default', { month: 'narrow' });
+	};
 
+	const isFirstOfMonth = (date: Date) => {
+		// We still skip Jan 1st so the top-left corner doesn't look cluttered
+		return date.getDate() === 1 && date.getMonth() !== 0;
+	};
+
+	// --- ANIMATION LOGIC ---
 	let dotElements: HTMLElement[] = [];
 	let dotPositions: { x: number; y: number }[] = [];
 
@@ -48,7 +56,6 @@
 	function handleMouseMove(e: MouseEvent) {
 		const mouseX = e.clientX;
 		const mouseY = e.clientY;
-
 		const radius = 200;
 		const peakDistance = 50;
 		const strength = 15;
@@ -56,7 +63,6 @@
 		dotElements.forEach((el, i) => {
 			if (!el) return;
 			const pos = dotPositions[i];
-
 			const dx = pos.x - mouseX;
 			const dy = pos.y - mouseY;
 			const distance = Math.sqrt(dx * dx + dy * dy);
@@ -77,7 +83,6 @@
 
 			const moveX = Math.cos(angle) * (force * strength);
 			const moveY = Math.sin(angle) * (force * strength);
-
 			el.style.transform = `translate(${moveX}px, ${moveY}px)`;
 		});
 	}
@@ -107,16 +112,27 @@
 		{#each allDays as day, i}
 			<button
 				bind:this={dotElements[i]}
-				class="group flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-400 ease-out will-change-transform"
+				class="group relative flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ease-out will-change-transform"
 				aria-label={day.toDateString()}
 				title={day.toDateString()}
 				on:click={() => console.log('Clicked:', formatDateId(day))}
 			>
+				{#if isFirstOfMonth(day)}
+					<span
+						class="pointer-events-none absolute top-0 left-0 font-mono text-[10px] leading-none text-zinc-600 select-none"
+					>
+						{getMonthLetter(day)}
+					</span>
+				{/if}
+
 				<div
 					class="h-1 w-1 rounded-full bg-rose transition-all
                     {isToday(day)
 						? 'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-500 group-hover:scale-[2]'
-						: 'duration-250 group-hover:scale-[3]'}"
+						: 'duration-250 group-hover:scale-[3]'}
+                        {isFirstOfMonth(day)
+						? 'shadow-[0_0_10px_2px_var(--color-rose)] group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)]'
+						: ''}"
 				></div>
 			</button>
 		{/each}
