@@ -1,6 +1,8 @@
 <script lang="ts">
 	const currentYear = new Date().getFullYear();
 
+	const today = new Date();
+
 	function getDaysInYear(year: number) {
 		const date = new Date(year, 0, 1);
 		const days = [];
@@ -16,6 +18,10 @@
 
 	const formatDateId = (date: Date) => {
 		return date.toISOString().split('T')[0];
+	};
+
+	const isToday = (date: Date) => {
+		return date.toDateString() === today.toDateString();
 	};
 </script>
 
@@ -35,7 +41,8 @@
 				on:click={() => console.log('Clicked:', formatDateId(day))}
 			>
 				<div
-					class="h-1 w-1 rounded-full bg-rose transition-all duration-300 group-hover:scale-[3]"
+					class="h-1 w-1 rounded-full bg-rose transition-all duration-300 group-hover:scale-[3]
+                    {isToday(day) ? 'ring-1 ring-rose ring-offset-4 ring-offset-iridium' : ''}"
 				></div>
 			</button>
 		{/each}
