@@ -26,7 +26,7 @@
 
 {#if isOpen && date}
 	<div
-		class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+		class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center p-4 backdrop-blur-xs"
 		role="button"
 		tabindex="0"
 		onclick={onClose}
@@ -51,7 +51,7 @@
 
 			<textarea
 				bind:value={note}
-				class="h-32 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:ring-rose-500 focus:outline-none"
+				class="h-32 w-full resize-none rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:ring-salmon focus:outline-none"
 				placeholder="Write your thoughts here..."
 			></textarea>
 
@@ -64,7 +64,7 @@
 				</button>
 				<button
 					onclick={handleSave}
-					class="rounded-lg bg-rose px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-rose/80"
+					class="rounded-lg bg-salmon px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-salmon/80"
 				>
 					Save Entry
 				</button>
