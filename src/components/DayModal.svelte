@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { fade } from 'svelte/transition';
+
 	interface Props {
 		isOpen: boolean;
 		date: Date | null;
@@ -26,7 +28,8 @@
 
 {#if isOpen && date}
 	<div
-		class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center p-4 backdrop-blur-xs"
+		transition:fade={{ duration: 150 }}
+		class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-zinc-900/40 p-4 backdrop-blur-xs backdrop-saturate-1000"
 		role="button"
 		tabindex="0"
 		onclick={onClose}
@@ -35,7 +38,7 @@
 		}}
 	>
 		<div
-			class="w-full max-w-md cursor-default rounded-2xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl"
+			class="w-full max-w-md cursor-default rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
@@ -64,7 +67,7 @@
 				</button>
 				<button
 					onclick={handleSave}
-					class="rounded-lg bg-salmon px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-salmon/80"
+					class="rounded-lg bg-salmon px-4 py-2 text-sm font-medium text-white transition-colors duration-300 hover:bg-salmon/80"
 				>
 					Save Entry
 				</button>
