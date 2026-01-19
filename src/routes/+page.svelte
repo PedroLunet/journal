@@ -2,17 +2,40 @@
 	import DayModal from '../components/DayModal.svelte';
 	import { onMount } from 'svelte';
 
+	let journalEntries = $state<Record<string, { text: string }>>({});
+
+	onMount(() => {
+		const stored = localStorage.getItem('journal_entries');
+		if (stored) {
+			journalEntries = JSON.parse(stored);
+		}
+	});
+
 	let selectedDate = $state<Date | null>(null);
 	let isModalOpen = $state(false);
+
+	const formatDateId = (date: Date) => date.toISOString().split('T')[0];
+
+	function handleSave(text: string) {
+		if (selectedDate) {
+			const dateId = formatDateId(selectedDate);
+
+			journalEntries[dateId] = { text };
+
+			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
+			console.log('Entry saved for:', dateId);
+		}
+		isModalOpen = false;
+	}
+
+	const hasEntry = (date: Date) => {
+		const dateId = formatDateId(date);
+		return !!journalEntries[dateId];
+	};
 
 	function openModal(day: Date) {
 		selectedDate = day;
 		isModalOpen = true;
-	}
-
-	function handleSave(text: string) {
-		console.log(`Saved for ${selectedDate?.toDateString()}:`, text);
-		isModalOpen = false;
 	}
 
 	const currentYear = new Date().getFullYear();
@@ -29,10 +52,6 @@
 	}
 
 	const allDays = getDaysInYear(currentYear);
-
-	const formatDateId = (date: Date) => {
-		return date.toISOString().split('T')[0];
-	};
 
 	const isToday = (date: Date) => {
 		return date.toDateString() === today.toDateString();
@@ -146,14 +165,18 @@
 
 				<div
 					class="h-1 w-1 rounded-full bg-rose transition-all
+                    
+                    {hasEntry(day) ? 'scale-125' : ''}
+
                     {isToday(day)
 						? 'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-500 group-hover:scale-[2]'
 						: 'duration-250 group-hover:scale-[3]'}
                     
-                    {isFirstOfMonth(day)
+                    {isFirstOfMonth(day) || hasEntry(day)
 						? 'shadow-[0_0_10px_2px_var(--color-rose)] group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)]'
 						: ''}
-                    {isFuture(day) ? 'opacity-30' : ''}"
+                    
+                    {isFuture(day) && !hasEntry(day) ? 'opacity-30' : ''}"
 				></div>
 			</button>
 		{/each}
