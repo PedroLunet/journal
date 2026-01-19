@@ -1,5 +1,19 @@
 <script lang="ts">
+	import DayModal from '../components/DayModal.svelte';
 	import { onMount } from 'svelte';
+
+	let selectedDate = $state<Date | null>(null);
+	let isModalOpen = $state(false);
+
+	function openModal(day: Date) {
+		selectedDate = day;
+		isModalOpen = true;
+	}
+
+	function handleSave(text: string) {
+		console.log(`Saved for ${selectedDate?.toDateString()}:`, text);
+		isModalOpen = false;
+	}
 
 	const currentYear = new Date().getFullYear();
 	const today = new Date();
@@ -37,9 +51,7 @@
 	};
 
 	// --- ANIMATION LOGIC ---
-	// Note: We don't need $state() here because we are reading/writing
-	// these values directly in the event handler for performance.
-	let dotElements: HTMLElement[] = [];
+	let dotElements = $state<HTMLElement[]>([]);
 	let dotPositions: { x: number; y: number }[] = [];
 
 	function updatePositions() {
@@ -122,7 +134,7 @@
 				class="group relative flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ease-out will-change-transform"
 				aria-label={day.toDateString()}
 				title={day.toDateString()}
-				onclick={() => console.log('Clicked:', formatDateId(day))}
+				onclick={() => openModal(day)}
 			>
 				{#if isFirstOfMonth(day)}
 					<span
@@ -145,5 +157,12 @@
 				></div>
 			</button>
 		{/each}
+
+		<DayModal
+			isOpen={isModalOpen}
+			date={selectedDate}
+			onClose={() => (isModalOpen = false)}
+			onSave={handleSave}
+		/>
 	</div>
 </div>
