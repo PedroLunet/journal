@@ -1,8 +1,94 @@
 <script lang="ts">
+	import DayModal from '../components/dayModal.svelte';
 	import { onMount } from 'svelte';
+
+	let journalEntries = $state<Record<string, { text: string }>>({});
+
+	onMount(() => {
+		const stored = localStorage.getItem('journal_entries');
+		if (stored) {
+			journalEntries = JSON.parse(stored);
+		}
+	});
+
+	let selectedDate = $state<Date | null>(null);
+	let isModalOpen = $state(false);
+
+	const formatDateId = (date: Date) => date.toISOString().split('T')[0];
+
+	// --- SAVE / DELETE LOGIC ---
+	function handleSave(text: string) {
+		if (selectedDate) {
+			const dateId = formatDateId(selectedDate);
+
+			if (!text.trim()) {
+				delete journalEntries[dateId];
+				console.log('Entry deleted for:', dateId);
+			} else {
+				journalEntries[dateId] = { text };
+				console.log('Entry saved for:', dateId);
+			}
+
+			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
+		}
+		if (!isModalOpen) return;
+	}
+
+	function saveEntryData(text: string) {
+		if (selectedDate) {
+			const dateId = formatDateId(selectedDate);
+			if (!text.trim()) {
+				delete journalEntries[dateId];
+			} else {
+				journalEntries[dateId] = { text };
+			}
+			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
+		}
+	}
+
+	// --- NAVIGATION LOGIC ---
+	function handlePrevDay() {
+		if (!selectedDate) return;
+		const newDate = new Date(selectedDate);
+		newDate.setDate(selectedDate.getDate() - 1);
+
+		if (newDate.getFullYear() === currentYear) {
+			selectedDate = newDate;
+		}
+	}
+
+	function handleNextDay() {
+		if (!selectedDate) return;
+		const newDate = new Date(selectedDate);
+		newDate.setDate(selectedDate.getDate() + 1);
+
+		if (!isFuture(newDate) && newDate.getFullYear() === currentYear) {
+			selectedDate = newDate;
+		}
+	}
+
+	function canGoNext(date: Date | null) {
+		if (!date) return false;
+		const nextDay = new Date(date);
+		nextDay.setDate(date.getDate() + 1);
+		return !isFuture(nextDay) && nextDay.getFullYear() === currentYear;
+	}
+
+	const hasEntry = (date: Date) => {
+		const dateId = formatDateId(date);
+		return !!journalEntries[dateId];
+	};
+
+	function openModal(day: Date) {
+		if (isFuture(day)) return;
+
+		selectedDate = day;
+		isModalOpen = true;
+	}
 
 	const currentYear = new Date().getFullYear();
 	const today = new Date();
+	today.setHours(0, 0, 0, 0);
 
 	function getDaysInYear(year: number) {
 		const date = new Date(year, 0, 1);
@@ -15,10 +101,6 @@
 	}
 
 	const allDays = getDaysInYear(currentYear);
-
-	const formatDateId = (date: Date) => {
-		return date.toISOString().split('T')[0];
-	};
 
 	const isToday = (date: Date) => {
 		return date.toDateString() === today.toDateString();
@@ -36,8 +118,47 @@
 		return date.getDate() === 1 && date.getMonth() !== 0;
 	};
 
+	// --- STYLING LOGIC ---
+	function getDotClasses(day: Date) {
+		const entry = hasEntry(day);
+		const current = isToday(day);
+		const first = isFirstOfMonth(day);
+		const future = isFuture(day);
+
+		let classes = 'h-1 w-1 rounded-full bg-rose transition-all ';
+
+		if (future && !entry) {
+			classes += 'opacity-30 ';
+		} else if (current) {
+			if (entry) {
+				classes +=
+					'ring-1 ring-salmon ring-offset-4 ring-offset-iridium duration-350 group-hover:scale-[2] ';
+			} else {
+				classes +=
+					'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-350 group-hover:scale-[2] ';
+			}
+		} else {
+			classes += 'duration-250 group-hover:scale-[3] ';
+		}
+
+		if (entry) {
+			if (current) {
+				classes += 'scale-125 shadow-[0_0_15px_3px_var(--color-salmon)] ';
+			} else {
+				classes += 'scale-125 shadow-[0_0_10px_2px_var(--color-salmon)] ';
+			}
+		} else if (first) {
+			classes += 'shadow-[0_0_10px_2px_var(--color-rose)] ';
+			if (!future) {
+				classes += 'group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)] ';
+			}
+		}
+
+		return classes;
+	}
+
 	// --- ANIMATION LOGIC ---
-	let dotElements: HTMLElement[] = [];
+	let dotElements = $state<HTMLElement[]>([]);
 	let dotPositions: { x: number; y: number }[] = [];
 
 	function updatePositions() {
@@ -79,13 +200,11 @@
 
 			const angle = Math.atan2(dy, dx);
 			let force = 0;
-
 			if (distance < peakDistance) {
 				force = distance / peakDistance;
 			} else {
 				force = (radius - distance) / (radius - peakDistance);
 			}
-
 			const moveX = Math.cos(angle) * (force * strength);
 			const moveY = Math.sin(angle) * (force * strength);
 			el.style.transform = `translate(${moveX}px, ${moveY}px)`;
@@ -99,13 +218,13 @@
 	}
 </script>
 
-<svelte:window on:resize={updatePositions} />
+<svelte:window onresize={updatePositions} />
 
 <div
 	class="h-full w-full"
 	role="application"
-	on:mousemove={handleMouseMove}
-	on:mouseleave={resetGrid}
+	onmousemove={handleMouseMove}
+	onmouseleave={resetGrid}
 >
 	<div
 		class="
@@ -117,10 +236,11 @@
 		{#each allDays as day, i}
 			<button
 				bind:this={dotElements[i]}
-				class="group relative flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ease-out will-change-transform"
+				disabled={isFuture(day)}
+				class="group relative flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ease-out will-change-transform disabled:cursor-default"
 				aria-label={day.toDateString()}
 				title={day.toDateString()}
-				on:click={() => console.log('Clicked:', formatDateId(day))}
+				onclick={() => openModal(day)}
 			>
 				{#if isFirstOfMonth(day)}
 					<span
@@ -130,18 +250,21 @@
 					</span>
 				{/if}
 
-				<div
-					class="h-1 w-1 rounded-full bg-rose transition-all
-                    {isToday(day)
-						? 'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-500 group-hover:scale-[2]'
-						: 'duration-250 group-hover:scale-[3]'}
-                    
-                    {isFirstOfMonth(day)
-						? 'shadow-[0_0_10px_2px_var(--color-rose)] group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)]'
-						: ''}
-                    {isFuture(day) ? 'opacity-30' : ''}"
-				></div>
+				<div class={getDotClasses(day)}></div>
 			</button>
 		{/each}
+
+		<DayModal
+			isOpen={isModalOpen}
+			date={selectedDate}
+			entryText={selectedDate ? journalEntries[formatDateId(selectedDate)]?.text : ''}
+			canGoNext={canGoNext(selectedDate)}
+			onClose={() => (isModalOpen = false)}
+			onSave={(text) => {
+				saveEntryData(text);
+			}}
+			onPrev={handlePrevDay}
+			onNext={handleNextDay}
+		/>
 	</div>
 </div>
