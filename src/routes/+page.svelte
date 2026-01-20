@@ -19,7 +19,15 @@
 	function handleSave(text: string) {
 		if (selectedDate) {
 			const dateId = formatDateId(selectedDate);
-			journalEntries[dateId] = { text };
+
+			if (!text.trim()) {
+				delete journalEntries[dateId];
+				console.log('Entry deleted for:', dateId);
+			} else {
+				journalEntries[dateId] = { text };
+				console.log('Entry saved for:', dateId);
+			}
+
 			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
 		}
 		isModalOpen = false;
