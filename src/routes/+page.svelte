@@ -19,11 +19,8 @@
 	function handleSave(text: string) {
 		if (selectedDate) {
 			const dateId = formatDateId(selectedDate);
-
 			journalEntries[dateId] = { text };
-
 			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
-			console.log('Entry saved for:', dateId);
 		}
 		isModalOpen = false;
 	}
@@ -68,6 +65,55 @@
 	const isFirstOfMonth = (date: Date) => {
 		return date.getDate() === 1 && date.getMonth() !== 0;
 	};
+
+	// --- STYLING LOGIC ---
+	function getDotClasses(day: Date) {
+		const entry = hasEntry(day);
+		const current = isToday(day);
+		const first = isFirstOfMonth(day);
+		const future = isFuture(day);
+
+		// 1. BASE STATE
+		let classes = 'h-1 w-1 rounded-full bg-rose transition-all ';
+
+		// 2. FUTURE STATE
+		if (future && !entry) {
+			classes += 'opacity-30 ';
+		}
+
+		// 3. TODAY STATE
+		if (current) {
+			if (entry) {
+				// CASE: TODAY + ENTRY
+				classes +=
+					'ring-1 ring-salmon ring-offset-4 ring-offset-iridium duration-350 group-hover:scale-[2] ';
+			} else {
+				// CASE: TODAY
+				classes +=
+					'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-350 group-hover:scale-[2] ';
+			}
+		} else {
+			// NOT TODAY
+			classes += 'duration-250 group-hover:scale-[3] ';
+		}
+
+		// 4. SHADOW HIERARCHY
+		if (entry) {
+			if (current) {
+				// CASE: TODAY + ENTRY
+				classes += 'scale-125 shadow-[0_0_15px_3px_var(--color-salmon)] ';
+			} else {
+				// CASE: PAST ENTRY
+				classes += 'scale-125 shadow-[0_0_10px_2px_var(--color-salmon)] ';
+			}
+		} else if (first) {
+			// CASE: FIRST OF MONTH
+			classes +=
+				'shadow-[0_0_10px_2px_var(--color-rose)] group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)] ';
+		}
+
+		return classes;
+	}
 
 	// --- ANIMATION LOGIC ---
 	let dotElements = $state<HTMLElement[]>([]);
@@ -163,21 +209,7 @@
 					</span>
 				{/if}
 
-				<div
-					class="h-1 w-1 rounded-full bg-rose transition-all
-                    
-                    {hasEntry(day) ? 'scale-125' : ''}
-
-                    {isToday(day)
-						? 'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-500 group-hover:scale-[2]'
-						: 'duration-250 group-hover:scale-[3]'}
-                    
-                    {isFirstOfMonth(day) || hasEntry(day)
-						? 'shadow-[0_0_10px_2px_var(--color-rose)] group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)]'
-						: ''}
-                    
-                    {isFuture(day) && !hasEntry(day) ? 'opacity-30' : ''}"
-				></div>
+				<div class={getDotClasses(day)}></div>
 			</button>
 		{/each}
 
