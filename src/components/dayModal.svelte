@@ -13,6 +13,8 @@
 
 	let note = $state('');
 
+	let isBackdropClick = false;
+
 	$effect(() => {
 		if (isOpen) {
 			note = entryText;
@@ -28,6 +30,19 @@
 			onClose();
 		}
 	}
+
+	function handleBackdropMouseDown(e: MouseEvent) {
+		if (e.target === e.currentTarget) {
+			isBackdropClick = true;
+		}
+	}
+
+	function handleBackdropMouseUp(e: MouseEvent) {
+		if (isBackdropClick && e.target === e.currentTarget) {
+			onClose();
+		}
+		isBackdropClick = false;
+	}
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -38,7 +53,8 @@
 		class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-zinc-900/40 p-4 backdrop-blur-xs backdrop-saturate-300"
 		role="button"
 		tabindex="0"
-		onclick={onClose}
+		onmousedown={handleBackdropMouseDown}
+		onmouseup={handleBackdropMouseUp}
 		onkeydown={(e) => {
 			if (e.key === 'Enter' || e.key === ' ') onClose();
 		}}
@@ -50,6 +66,7 @@
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
+			onmousedown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-4">
 				<h2 class="text-xl font-bold text-white">
