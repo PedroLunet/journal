@@ -79,7 +79,10 @@
 		onmousedown={handleBackdropMouseDown}
 		onmouseup={handleBackdropMouseUp}
 		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') closeAndSave();
+			if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+				e.preventDefault();
+				closeAndSave();
+			}
 		}}
 	>
 		<div
@@ -88,8 +91,11 @@
 			aria-modal="true"
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
 			onmousedown={(e) => e.stopPropagation()}
+			onkeydown={(e) => {
+				if (e.key === 'Escape') return;
+				e.stopPropagation();
+			}}
 		>
 			<div class="mb-6 flex items-center justify-between">
 				<button
