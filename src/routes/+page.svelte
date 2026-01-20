@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DayModal from '../components/DayModal.svelte';
+	import DayModal from '../components/dayModal.svelte';
 	import { onMount } from 'svelte';
 
 	let journalEntries = $state<Record<string, { text: string }>>({});
