@@ -111,8 +111,10 @@
 			}
 		} else if (first) {
 			// CASE: FIRST OF MONTH
-			classes +=
-				'shadow-[0_0_10px_2px_var(--color-rose)] group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)] ';
+			classes += 'shadow-[0_0_10px_2px_var(--color-rose)] ';
+			if (!future) {
+				classes += 'group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)] ';
+			}
 		}
 
 		return classes;
