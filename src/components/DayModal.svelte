@@ -29,7 +29,7 @@
 {#if isOpen && date}
 	<div
 		transition:fade={{ duration: 150 }}
-		class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-zinc-900/40 p-4 backdrop-blur-xs backdrop-saturate-1000"
+		class="fixed inset-0 z-50 flex cursor-pointer items-center justify-center bg-zinc-900/40 p-4 backdrop-blur-xs backdrop-saturate-300"
 		role="button"
 		tabindex="0"
 		onclick={onClose}
