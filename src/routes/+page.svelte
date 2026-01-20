@@ -31,12 +31,15 @@
 	};
 
 	function openModal(day: Date) {
+		if (isFuture(day)) return;
+
 		selectedDate = day;
 		isModalOpen = true;
 	}
 
 	const currentYear = new Date().getFullYear();
 	const today = new Date();
+	today.setHours(0, 0, 0, 0);
 
 	function getDaysInYear(year: number) {
 		const date = new Date(year, 0, 1);
@@ -73,16 +76,16 @@
 		const first = isFirstOfMonth(day);
 		const future = isFuture(day);
 
-		// 1. BASE STATE
+		// BASE STATE
 		let classes = 'h-1 w-1 rounded-full bg-rose transition-all ';
 
-		// 2. FUTURE STATE
+		// FUTURE STATE
 		if (future && !entry) {
 			classes += 'opacity-30 ';
 		}
 
-		// 3. TODAY STATE
-		if (current) {
+		// TODAY STATE
+		else if (current) {
 			if (entry) {
 				// CASE: TODAY + ENTRY
 				classes +=
@@ -97,7 +100,7 @@
 			classes += 'duration-250 group-hover:scale-[3] ';
 		}
 
-		// 4. SHADOW HIERARCHY
+		// SHADOW HIERARCHY
 		if (entry) {
 			if (current) {
 				// CASE: TODAY + ENTRY
@@ -196,7 +199,8 @@
 		{#each allDays as day, i}
 			<button
 				bind:this={dotElements[i]}
-				class="group relative flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ease-out will-change-transform"
+				disabled={isFuture(day)}
+				class="group relative flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-200 ease-out will-change-transform disabled:cursor-default"
 				aria-label={day.toDateString()}
 				title={day.toDateString()}
 				onclick={() => openModal(day)}
