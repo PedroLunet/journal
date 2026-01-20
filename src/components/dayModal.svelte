@@ -28,7 +28,7 @@
 	let isBackdropClick = false;
 
 	$effect(() => {
-		if (isOpen) {
+		if (isOpen && date) {
 			note = entryText;
 		}
 	});
