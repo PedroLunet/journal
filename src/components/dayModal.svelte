@@ -33,20 +33,20 @@
 		}
 	});
 
+	function closeAndSave() {
+		onSave(note);
+		onClose();
+	}
+
 	function handleNav(direction: 'prev' | 'next') {
 		onSave(note);
 		if (direction === 'prev') onPrev();
 		if (direction === 'next') onNext();
 	}
 
-	function handleSave() {
-		onSave(note);
-		onClose();
-	}
-
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
-			onClose();
+			closeAndSave();
 		} else if (e.key === 'ArrowLeft') {
 			handleNav('prev');
 		} else if (e.key === 'ArrowRight' && canGoNext) {
@@ -62,7 +62,7 @@
 
 	function handleBackdropMouseUp(e: MouseEvent) {
 		if (isBackdropClick && e.target === e.currentTarget) {
-			onClose();
+			closeAndSave();
 		}
 		isBackdropClick = false;
 	}
@@ -79,7 +79,7 @@
 		onmousedown={handleBackdropMouseDown}
 		onmouseup={handleBackdropMouseUp}
 		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') onClose();
+			if (e.key === 'Enter' || e.key === ' ') closeAndSave();
 		}}
 	>
 		<div
@@ -126,18 +126,12 @@
 				placeholder="Write your thoughts here..."
 			></textarea>
 
-			<div class="mt-6 flex justify-end gap-3">
+			<div class="mt-6 flex justify-end">
 				<button
-					onclick={onClose}
-					class="px-4 py-2 text-sm text-zinc-400 transition-colors hover:text-white"
+					onclick={closeAndSave}
+					class="rounded-lg bg-salmon px-6 py-2 text-sm font-medium text-white transition-colors duration-300 hover:bg-salmon/80"
 				>
-					Cancel
-				</button>
-				<button
-					onclick={handleSave}
-					class="rounded-lg bg-salmon px-4 py-2 text-sm font-medium text-white transition-colors duration-300 hover:bg-salmon/80"
-				>
-					Save Entry
+					Done!
 				</button>
 			</div>
 		</div>
