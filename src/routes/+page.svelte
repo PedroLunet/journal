@@ -222,6 +222,7 @@
 		<DayModal
 			isOpen={isModalOpen}
 			date={selectedDate}
+			entryText={selectedDate ? journalEntries[formatDateId(selectedDate)]?.text : ''}
 			onClose={() => (isModalOpen = false)}
 			onSave={handleSave}
 		/>

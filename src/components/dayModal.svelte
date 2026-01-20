@@ -4,17 +4,23 @@
 	interface Props {
 		isOpen: boolean;
 		date: Date | null;
+		entryText?: string;
 		onClose: () => void;
 		onSave: (text: string) => void;
 	}
 
-	let { isOpen, date, onClose, onSave }: Props = $props();
+	let { isOpen, date, entryText = '', onClose, onSave }: Props = $props();
 
 	let note = $state('');
 
+	$effect(() => {
+		if (isOpen) {
+			note = entryText;
+		}
+	});
+
 	function handleSave() {
 		onSave(note);
-		note = '';
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
