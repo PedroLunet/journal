@@ -106,7 +106,10 @@
 					<ChevronLeft size={24} />
 				</button>
 
-				<div class="text-center">
+				<div class="flex flex-col gap-1 text-center">
+					<h3 class="text-sm font-semibold text-zinc-500">
+						{date.toLocaleDateString('en-US', { weekday: 'long' })}
+					</h3>
 					<h2 class="text-xl font-bold text-white">
 						{date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
 					</h2>
