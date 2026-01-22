@@ -178,13 +178,15 @@
 			</p>
 		</div>
 
-		<CircularProgress
-			progress={yearProgress}
-			{daysPassed}
-			totalDays={allDays.length}
-			size={100}
-			strokeWidth={5}
-		/>
+		<div class="flex items-center gap-6">
+			<CircularProgress
+				progress={yearProgress}
+				{daysPassed}
+				totalDays={allDays.length}
+				size={80}
+				strokeWidth={5}
+			/>
+		</div>
 	</header>
 
 	<main

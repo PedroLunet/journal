@@ -1,16 +1,13 @@
 <script lang="ts">
-	let { progress = 0, totalDays = 0, daysPassed = 0, size = 120, strokeWidth = 6 } = $props();
+	let { progress = 0, totalDays = 0, daysPassed = 0, size = 80, strokeWidth = 5 } = $props();
 
-	const ARC_DEGREES = 260;
-
+	const ARC_DEGREES = 280;
 	const radius = (size - strokeWidth) / 2;
 	const circumference = 2 * Math.PI * radius;
-
 	const visibleLength = (ARC_DEGREES / 360) * circumference;
 
 	let progressOffset = $derived(visibleLength - (progress / 100) * visibleLength);
-
-	const rotation = 140;
+	const rotation = 130;
 </script>
 
 <div
@@ -47,19 +44,17 @@
 			stroke-dashoffset={progressOffset}
 			stroke-linecap="round"
 			class="text-salmon transition-all duration-1000 ease-out"
-			style="filter: drop-shadow(0 0 6px rgba(235, 158, 143, 0.4));"
 		/>
 	</svg>
 
-	<div class="absolute inset-0 flex flex-col items-center justify-center pt-3">
-		<div class="flex items-baseline gap-0.5">
-			<span class="text-2xl font-bold tracking-tighter text-rose">
-				{daysPassed}
-			</span>
-			<span class="text-[10px] font-medium text-zinc-600">
-				/ {totalDays}
-			</span>
-		</div>
-		<span class="-mt-1 text-[9px] font-bold tracking-widest text-zinc-700 uppercase"> Days </span>
+	<div class="absolute inset-0 flex flex-col items-center justify-center">
+		<span class="text-xl leading-none font-bold tracking-tighter text-rose">
+			{daysPassed}
+		</span>
+
+		<div class="my-0.5 h-px w-6 bg-zinc-700/50"></div>
+		<span class="text-xs leading-none font-bold tracking-wide text-zinc-600">
+			{totalDays}
+		</span>
 	</div>
 </div>
