@@ -8,9 +8,9 @@
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
 
 <div
-	class="box-border h-screen w-screen overflow-y-auto bg-iridium p-12 text-rose md:overflow-hidden"
+	class="box-border flex h-screen w-screen flex-col overflow-hidden bg-iridium p-6 text-rose md:p-12"
 >
-	<div class="h-full w-full">
+	<div class="relative h-full w-full">
 		{@render children()}
 	</div>
 </div>
