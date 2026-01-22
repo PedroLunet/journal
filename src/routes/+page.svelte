@@ -44,7 +44,6 @@
 			updatePositions();
 
 			const todayIndex = allDays.findIndex((day) => isToday(day));
-
 			if (todayIndex !== -1 && dotElements[todayIndex]) {
 				dotElements[todayIndex].scrollIntoView({
 					behavior: 'smooth',
@@ -105,27 +104,25 @@
 		const first = isFirstOfMonth(day);
 		const future = isFuture(day);
 
-		let classes = 'h-1 w-1 rounded-full bg-rose transition-all ';
+		let classes = 'h-1 w-1 rounded-full bg-rose transition-all group-hover:scale-[2] ';
 
 		if (future && !entry) {
 			classes += 'opacity-30 ';
 		} else if (current) {
 			if (entry) {
-				classes +=
-					'ring-1 ring-salmon ring-offset-4 ring-offset-iridium duration-350 group-hover:scale-[2] ';
+				classes += 'ring-1 ring-salmon ring-offset-4 ring-offset-iridium duration-350 ';
 			} else {
-				classes +=
-					'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-350 group-hover:scale-[2] ';
+				classes += 'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-350 ';
 			}
 		} else {
-			classes += 'duration-250 group-hover:scale-[3] ';
+			classes += 'duration-250 ';
 		}
 
 		if (entry) {
 			if (current) {
-				classes += 'scale-125 shadow-[0_0_15px_3px_var(--color-salmon)] ';
+				classes += 'shadow-[0_0_15px_3px_var(--color-salmon)] ';
 			} else {
-				classes += 'scale-125 shadow-[0_0_10px_2px_var(--color-salmon)] ';
+				classes += 'shadow-[0_0_10px_2px_var(--color-salmon)] ';
 			}
 		} else if (first) {
 			classes += 'shadow-[0_0_10px_2px_var(--color-rose)] ';
@@ -140,7 +137,6 @@
 
 	function updatePositions() {
 		if (typeof window === 'undefined') return;
-
 		dotElements = dotElements || [];
 		dotPositions = dotElements.map((el) => {
 			if (!el) return { x: 0, y: 0 };
@@ -199,12 +195,12 @@
 <svelte:window onresize={updatePositions} />
 
 <div
-	class="flex h-full w-full flex-col gap-6"
+	class="flex h-full w-full flex-col"
 	role="application"
 	onmousemove={handleMouseMove}
 	onmouseleave={resetGrid}
 >
-	<header class="flex shrink-0 items-end justify-between border-b border-rose/10 pb-6">
+	<header class="flex shrink-0 items-end justify-between border-b border-rose/10 p-6 md:p-8">
 		<div class="flex flex-col gap-1">
 			<h1 class="font-mono text-4xl font-bold tracking-tighter text-salmon">
 				{currentYear}
@@ -236,10 +232,10 @@
 	>
 		<div
 			class="
-                grid min-h-[500px]
-                w-full grid-cols-10 place-items-center gap-y-8
-                py-4
-                sm:h-full sm:grid-cols-[repeat(19,1fr)] md:place-content-evenly md:gap-y-0 md:py-0
+                grid min-h-125 w-full
+                grid-cols-10 place-items-center gap-y-8
+                p-6 sm:h-full
+                sm:grid-cols-[repeat(19,1fr)] md:place-content-evenly md:gap-y-0
             "
 		>
 			{#each allDays as day, i}
