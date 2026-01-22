@@ -1,75 +1,65 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	let { progress = 0, totalDays = 0, daysPassed = 0, size = 120, strokeWidth = 6 } = $props();
 
-	let { progress = 0 } = $props();
+	const ARC_DEGREES = 260;
 
-	type Particle = {
-		x: number;
-		y: number;
-		size: number;
-		jitter: number;
-		moveX: number;
-		moveY: number;
-		duration: number;
-		delay: number;
-	};
+	const radius = (size - strokeWidth) / 2;
+	const circumference = 2 * Math.PI * radius;
 
-	let particles = $state<Particle[]>([]);
+	const visibleLength = (ARC_DEGREES / 360) * circumference;
 
-	onMount(() => {
-		particles = Array.from({ length: 250 }, () => ({
-			x: Math.random() * 100,
-			y: Math.random() * 100,
-			size: 2 + Math.random() * 4,
-			jitter: (Math.random() - 0.5) * 15,
+	let progressOffset = $derived(visibleLength - (progress / 100) * visibleLength);
 
-			moveX: (Math.random() - 0.5) * 20,
-			moveY: (Math.random() - 0.5) * 20,
-			duration: 3 + Math.random() * 5,
-			delay: -Math.random() * 10
-		}));
-	});
-
-	function isParticleActive(p: Particle) {
-		return p.x < progress + p.jitter;
-	}
+	const rotation = 140;
 </script>
 
 <div
-	class="relative h-10 w-32 overflow-hidden rounded-full border border-rose/50 bg-zinc-900 md:w-64"
+	class="relative flex items-center justify-center select-none"
+	style="width: {size}px; height: {size}px;"
 >
-	{#each particles as p}
-		<div
-			class="animate-float absolute rounded-full bg-salmon transition-opacity duration-700 ease-out"
-			style="
-                left: {p.x}%; 
-                top: {p.y}%; 
-                width: {p.size}px; 
-                height: {p.size}px;
-                opacity: {isParticleActive(p) ? 1 : 0};
-                
-                /* PASS VARIABLES TO CSS */
-                --mx: {p.moveX}px;
-                --my: {p.moveY}px;
-                animation-duration: {p.duration}s;
-                animation-delay: {p.delay}s;
-            "
-		></div>
-	{/each}
+	<svg
+		width={size}
+		height={size}
+		viewBox="0 0 {size} {size}"
+		class="overflow-visible"
+		style="transform: rotate({rotation}deg);"
+	>
+		<circle
+			cx={size / 2}
+			cy={size / 2}
+			r={radius}
+			stroke="currentColor"
+			stroke-width={strokeWidth}
+			fill="transparent"
+			stroke-dasharray="{visibleLength} {circumference}"
+			stroke-linecap="round"
+			class="text-zinc-800"
+		/>
+
+		<circle
+			cx={size / 2}
+			cy={size / 2}
+			r={radius}
+			stroke="currentColor"
+			stroke-width={strokeWidth}
+			fill="transparent"
+			stroke-dasharray="{visibleLength} {circumference}"
+			stroke-dashoffset={progressOffset}
+			stroke-linecap="round"
+			class="text-salmon transition-all duration-1000 ease-out"
+			style="filter: drop-shadow(0 0 6px rgba(235, 158, 143, 0.4));"
+		/>
+	</svg>
+
+	<div class="absolute inset-0 flex flex-col items-center justify-center pt-3">
+		<div class="flex items-baseline gap-0.5">
+			<span class="text-2xl font-bold tracking-tighter text-rose">
+				{daysPassed}
+			</span>
+			<span class="text-[10px] font-medium text-zinc-600">
+				/ {totalDays}
+			</span>
+		</div>
+		<span class="-mt-1 text-[9px] font-bold tracking-widest text-zinc-700 uppercase"> Days </span>
+	</div>
 </div>
-
-<style>
-	@keyframes float {
-		0%,
-		100% {
-			transform: translate(-50%, -50%) translate(0px, 0px);
-		}
-		50% {
-			transform: translate(-50%, -50%) translate(var(--mx), var(--my));
-		}
-	}
-
-	.animate-float {
-		animation: float linear infinite;
-	}
-</style>
