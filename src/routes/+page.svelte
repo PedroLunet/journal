@@ -31,7 +31,6 @@
 	}
 
 	const allDays = getDaysInYear(currentYear);
-
 	const daysPassed = allDays.filter((day) => !isFuture(day)).length;
 	const yearProgress = (daysPassed / allDays.length) * 100;
 
@@ -40,7 +39,20 @@
 		if (stored) {
 			journalEntries = JSON.parse(stored);
 		}
-		setTimeout(updatePositions, 100);
+
+		setTimeout(() => {
+			updatePositions();
+
+			const todayIndex = allDays.findIndex((day) => isToday(day));
+
+			if (todayIndex !== -1 && dotElements[todayIndex]) {
+				dotElements[todayIndex].scrollIntoView({
+					behavior: 'smooth',
+					block: 'center',
+					inline: 'center'
+				});
+			}
+		}, 100);
 	});
 
 	function handleSave(text: string) {
@@ -224,7 +236,7 @@
 	>
 		<div
 			class="
-                grid min-h-125
+                grid min-h-[500px]
                 w-full grid-cols-10 place-items-center gap-y-8
                 py-4
                 sm:h-full sm:grid-cols-[repeat(19,1fr)] md:place-content-evenly md:gap-y-0 md:py-0
