@@ -178,6 +178,7 @@
 							transition:fly={{ y: 10, duration: 200 }}
 							role="dialog"
 							aria-label="Color Picker"
+							tabindex="-1"
 							onclick={(e) => e.stopPropagation()}
 							onkeydown={(e) => e.stopPropagation()}
 						>
