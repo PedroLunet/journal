@@ -148,15 +148,16 @@
 				placeholder="Write your thoughts here..."
 			></textarea>
 
-			<button
-				class="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]"
-			>
-				<ImageIcon size={18} />
-				<span class="text-sm font-medium">Add a photo</span>
-			</button>
+			<div class="mt-auto grid grid-cols-2 gap-4 md:flex md:items-center">
+				<button
+					class="col-span-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]
+          md:order-2 md:mr-auto md:w-auto md:px-5 md:py-1.5"
+				>
+					<ImageIcon size={18} />
+					<span class="text-sm font-medium">Add a photo</span>
+				</button>
 
-			<div class="mt-4 flex shrink-0 items-center justify-between pt-2">
-				<div class="relative">
+				<div class="relative col-span-1 flex items-center md:order-1">
 					<button
 						onclick={() => (showPicker = !showPicker)}
 						class="h-6 w-6 rounded-full border border-white/20 shadow-sm transition-transform hover:scale-110 active:scale-95"
@@ -191,7 +192,7 @@
 
 				<button
 					onclick={closeAndSave}
-					class="rounded-lg px-6 py-2 text-sm font-medium transition-colors duration-300 hover:opacity-90 active:scale-95"
+					class="col-span-1 justify-self-end rounded-xl px-6 py-2 text-sm font-medium transition-colors duration-300 hover:opacity-90 active:scale-95 md:order-3"
 					style="background-color: {mood}; color: {textColor};"
 				>
 					Done!
