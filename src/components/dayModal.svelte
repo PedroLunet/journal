@@ -101,6 +101,9 @@
 		tabindex="0"
 		onmousedown={handleBackdropMouseDown}
 		onmouseup={handleBackdropMouseUp}
+		onkeydown={(e) => {
+			if (e.key === 'Escape') closeAndSave();
+		}}
 	>
 		<div
 			class="w-full max-w-xl cursor-default rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl transition-all"
@@ -109,6 +112,7 @@
 			tabindex="-1"
 			onclick={(e) => e.stopPropagation()}
 			onmousedown={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-6 flex items-center justify-between">
 				<button
@@ -161,17 +165,23 @@
 
 					{#if showPicker}
 						<div
-							class="fixed inset-0 z-[60] cursor-default"
+							class="fixed inset-0 z-60 cursor-default"
 							role="presentation"
 							onclick={() => (showPicker = false)}
+							onkeydown={(e) => {
+								if (e.key === 'Escape') showPicker = false;
+							}}
 						></div>
 
 						<div
-							class="absolute bottom-full left-0 z-[70] mb-3 w-64 rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-xl"
+							class="absolute bottom-full left-0 z-70 mb-3 w-64 rounded-xl border border-zinc-700 bg-zinc-900 p-3 shadow-xl"
 							transition:fly={{ y: 10, duration: 200 }}
+							role="dialog"
+							aria-label="Color Picker"
 							onclick={(e) => e.stopPropagation()}
+							onkeydown={(e) => e.stopPropagation()}
 						>
-							<ColorPicker value={mood} onChange={(val) => (mood = val)} />
+							<ColorPicker value={mood} onChange={(val: string) => (mood = val)} />
 						</div>
 					{/if}
 				</div>
