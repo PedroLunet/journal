@@ -28,29 +28,19 @@
 	}: Props = $props();
 
 	let note = $state('');
-	let mood = $state('#f43f5e');
+	let mood = $state('#eb9e8f');
 	let showPicker = $state(false);
 	let isBackdropClick = false;
-
-	const legacyMap: Record<string, string> = {
-		rose: '#f43f5e',
-		amber: '#fbbf24',
-		emerald: '#34d399',
-		sky: '#38bdf8',
-		violet: '#a78bfa'
-	};
 
 	$effect(() => {
 		if (isOpen && date) {
 			note = entryText;
 			showPicker = false;
 
-			if (entryMood && legacyMap[entryMood]) {
-				mood = legacyMap[entryMood];
-			} else if (entryMood && entryMood.startsWith('#')) {
+			if (entryMood && entryMood.startsWith('#')) {
 				mood = entryMood;
 			} else {
-				mood = '#f43f5e';
+				mood = '#eb9e8f';
 			}
 		}
 	});
