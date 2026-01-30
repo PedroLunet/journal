@@ -1,38 +1,44 @@
-# sv
+# 📅 Dot Journal
 
-Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
+**A minimalist space to visualize time and memory.**
 
-## Creating a project
+Dot Journal reimagines the standard calendar as an interactive canvas. Instead of boxes and lists, your year is mapped as a living grid of dots, giving you a unique perspective on the passage of time and the shape of your life.
 
-If you're seeing this, you've probably already done this step. Congrats!
+## ✨ The Experience
 
-```sh
-# create a new project in the current directory
-npx sv create
+- **Your Year at a Glance**
+  Every day of the year is represented by a single dot.
+  - **The Past:** Solid and permanent.
+  - **The Present:** Glowing and active.
+  - **The Future:** Faded and waiting.
 
-# create a new project in my-app
-npx sv create my-app
-```
+- **Interactive & Tactile**
+  The grid feels alive. Move your mouse across the days, and the dots gently scatter and ripple around your cursor, adding a moment of playfulness to your daily reflection.
 
-## Developing
+- **Visual Progress**
+  A sleek circular gauge in the header shows you exactly where you stand in the current year, grounding you in the present moment.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+- **Private by Design**
+  Your thoughts are yours alone. Currently, all entries are saved directly to your device's local memory. No accounts, no cloud, no tracking.
 
-```sh
-npm run dev
+- **Distraction-Free Writing**
+  Click any active dot to open a clean, focused writing space. Capture a thought, a memory, or a feeling, and watch that day's dot glow to mark it as "kept."
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+## 🚀 How to Run
 
-## Building
+If you want to run this journal on your own computer:
 
-To create a production version of your app:
+1.  **Download the project** (Clone this repository).
+2.  **Install the necessary tools**:
+    ```bash
+    npm install
+    ```
+3.  **Start the app**:
+    ```bash
+    npm run dev
+    ```
+4.  **Open your browser** to the address shown (usually `http://localhost:5173`).
 
-```sh
-npm run build
-```
+---
 
-You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://svelte.dev/docs/kit/adapters) for your target environment.
+_2026_
