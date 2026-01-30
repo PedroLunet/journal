@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import { ChevronRight, ChevronLeft } from '@lucide/svelte';
+	import { ChevronRight, ChevronLeft, Image as ImageIcon } from '@lucide/svelte';
 	import ColorPicker from './colorPicker.svelte';
 	import chroma from 'chroma-js';
 
@@ -9,6 +9,7 @@
 		date: Date | null;
 		entryText?: string;
 		entryMood?: string;
+		entryImages?: Blob[];
 		canGoNext?: boolean;
 		onClose: () => void;
 		onSave: (text: string, mood: string) => void;
@@ -101,7 +102,7 @@
 		}}
 	>
 		<div
-			class="w-full max-w-xl cursor-default rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl transition-all"
+			class="flex max-h-[90vh] w-full max-w-xl cursor-default flex-col rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl transition-all"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
@@ -109,7 +110,7 @@
 			onmousedown={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
-			<div class="mb-6 flex items-center justify-between">
+			<div class="mb-4 flex shrink-0 items-center justify-between">
 				<button
 					onclick={() => handleNav('prev')}
 					class="flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white active:scale-95"
@@ -125,7 +126,6 @@
 					<h2 class="text-xl font-bold text-white">
 						{date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
 					</h2>
-					<p class="text-sm text-zinc-500">How was your day?</p>
 				</div>
 
 				<button
@@ -143,12 +143,19 @@
 
 			<textarea
 				bind:value={note}
-				class="h-48 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
+				class="mb-4 h-48 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
 				style="--tw-ring-color: {mood};"
 				placeholder="Write your thoughts here..."
 			></textarea>
 
-			<div class="mt-6 flex items-center justify-between">
+			<button
+				class="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]"
+			>
+				<ImageIcon size={18} />
+				<span class="text-sm font-medium">Add a photo</span>
+			</button>
+
+			<div class="mt-4 flex shrink-0 items-center justify-between pt-2">
 				<div class="relative">
 					<button
 						onclick={() => (showPicker = !showPicker)}
