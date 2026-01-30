@@ -3,7 +3,7 @@
 	import CircularProgress from '../components/progressBar.svelte';
 	import { onMount } from 'svelte';
 
-	let journalEntries = $state<Record<string, { text: string }>>({});
+	let journalEntries = $state<Record<string, { text: string; mood?: string }>>({});
 	let selectedDate = $state<Date | null>(null);
 	let isModalOpen = $state(false);
 
@@ -22,7 +22,6 @@
 		}
 		return days;
 	}
-
 	const allDays = getDaysInYear(currentYear);
 
 	let today = $state(new Date());
@@ -36,6 +35,7 @@
 	const isFirstOfMonth = (date: Date) => date.getDate() === 1 && date.getMonth() !== 0;
 	const getMonthLetter = (date: Date) => date.toLocaleString('default', { month: 'narrow' });
 	const formatDateId = (date: Date) => date.toISOString().split('T')[0];
+	const getEntry = (date: Date) => journalEntries[formatDateId(date)];
 
 	let daysPassed = $derived(allDays.filter((day) => !isFuture(day)).length);
 	let yearProgress = $derived((daysPassed / allDays.length) * 100);
@@ -136,22 +136,20 @@
 		});
 	}
 
-	const hasEntry = (date: Date) => {
-		const dateId = formatDateId(date);
-		return !!journalEntries[dateId];
-	};
-
 	function openModal(day: Date) {
 		if (isFuture(day)) return;
 		selectedDate = day;
 		isModalOpen = true;
 	}
 
-	function handleSave(text: string) {
+	function handleSave(text: string, mood: string) {
 		if (selectedDate) {
 			const dateId = formatDateId(selectedDate);
-			if (!text.trim()) delete journalEntries[dateId];
-			else journalEntries[dateId] = { text };
+			if (!text.trim()) {
+				delete journalEntries[dateId];
+			} else {
+				journalEntries[dateId] = { text, mood };
+			}
 			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
 		}
 	}
@@ -175,25 +173,60 @@
 		return !isFuture(nextDay) && nextDay.getFullYear() === currentYear;
 	}
 
+	// --- STYLING ---
+
 	function getDotClasses(day: Date) {
-		const entry = hasEntry(day);
+		const entry = getEntry(day);
 		const current = isToday(day);
-		const first = isFirstOfMonth(day);
 		const future = isFuture(day);
-		let classes = 'h-1 w-1 rounded-full bg-rose transition-all group-hover:scale-[2] ';
+		const first = isFirstOfMonth(day);
+
+		let classes = 'h-1 w-1 rounded-full transition-all group-hover:scale-[2] duration-250 ';
+
 		if (future && !entry) classes += 'opacity-30 ';
-		else if (current) {
-			if (entry) classes += 'ring-1 ring-salmon ring-offset-4 ring-offset-iridium duration-350 ';
-			else classes += 'ring-1 ring-rose ring-offset-4 ring-offset-iridium duration-350 ';
-		} else classes += 'duration-250 ';
-		if (entry) {
-			if (current) classes += 'shadow-[0_0_15px_3px_var(--color-salmon)] ';
-			else classes += 'shadow-[0_0_10px_2px_var(--color-salmon)] ';
-		} else if (first) {
+
+		if (!entry) classes += 'bg-rose ';
+
+		if (current) {
+			if (!entry) {
+				classes += 'ring-1 ring-offset-4 ring-offset-iridium ring-rose duration-350 ';
+			} else {
+				classes += 'duration-350 ';
+			}
+		}
+
+		if (first && !entry) {
 			classes += 'shadow-[0_0_10px_2px_var(--color-rose)] ';
 			if (!future) classes += 'group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)] ';
 		}
+
 		return classes;
+	}
+
+	function getDotStyle(day: Date) {
+		const entry = getEntry(day);
+		const current = isToday(day);
+
+		if (entry) {
+			const moodColor = entry.mood || 'var(--color-salmon)';
+
+			if (current) {
+				return `
+            background-color: var(--color-rose); 
+            box-shadow: 
+                0 0 0 4px var(--color-iridium), 
+                0 0 0 5px ${moodColor}, 
+                0 0 15px 3px ${moodColor};
+         `;
+			} else {
+				return `
+            background-color: ${moodColor}; 
+            box-shadow: 0 0 10px 2px ${moodColor};
+          `;
+			}
+		}
+
+		return '';
 	}
 </script>
 
@@ -256,7 +289,7 @@
 						</span>
 					{/if}
 
-					<div class={getDotClasses(day)}></div>
+					<div class={getDotClasses(day)} style={getDotStyle(day)}></div>
 				</button>
 			{/each}
 		</div>
@@ -266,9 +299,10 @@
 		isOpen={isModalOpen}
 		date={selectedDate}
 		entryText={selectedDate ? journalEntries[formatDateId(selectedDate)]?.text : ''}
+		entryMood={selectedDate ? journalEntries[formatDateId(selectedDate)]?.mood : undefined}
 		canGoNext={canGoNext(selectedDate)}
 		onClose={() => (isModalOpen = false)}
-		onSave={(text) => handleSave(text)}
+		onSave={(text, mood) => handleSave(text, mood)}
 		onPrev={handlePrevDay}
 		onNext={handleNextDay}
 	/>
