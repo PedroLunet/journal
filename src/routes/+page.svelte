@@ -6,19 +6,12 @@
 	let journalEntries = $state<Record<string, { text: string }>>({});
 	let selectedDate = $state<Date | null>(null);
 	let isModalOpen = $state(false);
+
 	let dotElements = $state<HTMLElement[]>([]);
 	let dotPositions: { x: number; y: number }[] = [];
 	let containerRef = $state<HTMLElement | null>(null);
 
 	const currentYear = new Date().getFullYear();
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-
-	const isFuture = (date: Date) => date > today;
-	const isToday = (date: Date) => date.toDateString() === today.toDateString();
-	const isFirstOfMonth = (date: Date) => date.getDate() === 1 && date.getMonth() !== 0;
-	const getMonthLetter = (date: Date) => date.toLocaleString('default', { month: 'narrow' });
-	const formatDateId = (date: Date) => date.toISOString().split('T')[0];
 
 	function getDaysInYear(year: number) {
 		const date = new Date(year, 0, 1);
@@ -31,14 +24,25 @@
 	}
 
 	const allDays = getDaysInYear(currentYear);
-	const daysPassed = allDays.filter((day) => !isFuture(day)).length;
-	const yearProgress = (daysPassed / allDays.length) * 100;
+
+	let today = $state(new Date());
+
+	$effect(() => {
+		today.setHours(0, 0, 0, 0);
+	});
+
+	const isFuture = (date: Date) => date > today;
+	const isToday = (date: Date) => date.toDateString() === today.toDateString();
+	const isFirstOfMonth = (date: Date) => date.getDate() === 1 && date.getMonth() !== 0;
+	const getMonthLetter = (date: Date) => date.toLocaleString('default', { month: 'narrow' });
+	const formatDateId = (date: Date) => date.toISOString().split('T')[0];
+
+	let daysPassed = $derived(allDays.filter((day) => !isFuture(day)).length);
+	let yearProgress = $derived((daysPassed / allDays.length) * 100);
 
 	onMount(() => {
 		const stored = localStorage.getItem('journal_entries');
-		if (stored) {
-			journalEntries = JSON.parse(stored);
-		}
+		if (stored) journalEntries = JSON.parse(stored);
 
 		setTimeout(() => {
 			updatePositions();
@@ -50,8 +54,31 @@
 					inline: 'center'
 				});
 			}
-		}, 100);
+		}, 150);
+
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === 'visible') refreshDate();
+		};
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+		const interval = setInterval(refreshDate, 60000);
+
+		return () => {
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
+			clearInterval(interval);
+		};
 	});
+
+	function refreshDate() {
+		const now = new Date();
+		if (now.toDateString() !== today.toDateString()) {
+			if (now.getFullYear() !== currentYear) {
+				location.reload();
+				return;
+			}
+			today = now;
+			today.setHours(0, 0, 0, 0);
+		}
+	}
 
 	function updatePositions() {
 		if (typeof window === 'undefined') return;
@@ -66,22 +93,30 @@
 	function handleMouseMove(e: MouseEvent) {
 		if (typeof window === 'undefined') return;
 		if (window.innerWidth < 768) return;
+		if (dotPositions.length === 0) return;
+
 		const mouseX = e.clientX;
 		const mouseY = e.clientY;
 		const radius = 200;
 		const peakDistance = 50;
 		const strength = 15;
-		dotElements.forEach((el, i) => {
-			if (!el) return;
+
+		for (let i = 0; i < dotElements.length; i++) {
+			const el = dotElements[i];
+			if (!el) continue;
 			const pos = dotPositions[i];
-			if (!pos) return;
+			if (!pos) continue;
+
 			const dx = pos.x - mouseX;
 			const dy = pos.y - mouseY;
-			const distance = Math.sqrt(dx * dx + dy * dy);
-			if (distance >= radius) {
+			const distSq = dx * dx + dy * dy;
+
+			if (distSq >= radius * radius) {
 				if (el.style.transform) el.style.transform = '';
-				return;
+				continue;
 			}
+
+			const distance = Math.sqrt(distSq);
 			const angle = Math.atan2(dy, dx);
 			let force = 0;
 			if (distance < peakDistance) {
@@ -92,7 +127,7 @@
 			const moveX = Math.cos(angle) * (force * strength);
 			const moveY = Math.sin(angle) * (force * strength);
 			el.style.transform = `translate(${moveX}px, ${moveY}px)`;
-		});
+		}
 	}
 
 	function resetGrid() {
@@ -101,16 +136,17 @@
 		});
 	}
 
-	// ... (Keep helpers) ...
 	const hasEntry = (date: Date) => {
 		const dateId = formatDateId(date);
 		return !!journalEntries[dateId];
 	};
+
 	function openModal(day: Date) {
 		if (isFuture(day)) return;
 		selectedDate = day;
 		isModalOpen = true;
 	}
+
 	function handleSave(text: string) {
 		if (selectedDate) {
 			const dateId = formatDateId(selectedDate);
@@ -119,6 +155,7 @@
 			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
 		}
 	}
+
 	function handlePrevDay() {
 		if (!selectedDate) return;
 		const newDate = new Date(selectedDate);
@@ -196,11 +233,11 @@
 	>
 		<div
 			class="
-                grid min-h-125 w-full
-                grid-cols-10 place-items-center gap-y-8
-                p-6 sm:h-full
-                sm:grid-cols-[repeat(19,1fr)] md:place-content-evenly md:gap-y-0
-            "
+        grid min-h-125 w-full
+        grid-cols-10 place-items-center gap-y-8
+        p-6 sm:h-full
+        sm:grid-cols-[repeat(19,1fr)] md:place-content-evenly md:gap-y-0
+      "
 		>
 			{#each allDays as day, i}
 				<button
