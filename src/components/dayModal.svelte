@@ -2,6 +2,7 @@
 	import { fade, fly } from 'svelte/transition';
 	import { ChevronRight, ChevronLeft } from '@lucide/svelte';
 	import ColorPicker from './colorPicker.svelte';
+	import chroma from 'chroma-js';
 
 	interface Props {
 		isOpen: boolean;
@@ -31,6 +32,10 @@
 	let mood = $state('#eb9e8f');
 	let showPicker = $state(false);
 	let isBackdropClick = false;
+
+	let textColor = $derived(
+		chroma.valid(mood) && chroma(mood).luminance() > 0.5 ? '#18181b' : '#fffbeb'
+	);
 
 	$effect(() => {
 		if (isOpen && date) {
@@ -179,8 +184,8 @@
 
 				<button
 					onclick={closeAndSave}
-					class="rounded-lg px-6 py-2 text-sm font-medium text-white transition-colors duration-300 hover:opacity-90 active:scale-95"
-					style="background-color: {mood};"
+					class="rounded-lg px-6 py-2 text-sm font-medium transition-colors duration-300 hover:opacity-90 active:scale-95"
+					style="background-color: {mood}; color: {textColor};"
 				>
 					Done!
 				</button>
