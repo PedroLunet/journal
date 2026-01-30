@@ -2,8 +2,10 @@
 	import DayModal from '../components/dayModal.svelte';
 	import CircularProgress from '../components/progressBar.svelte';
 	import { onMount } from 'svelte';
+	import { db, type JournalEntry } from '../lib/db';
 
-	let journalEntries = $state<Record<string, { text: string; mood?: string }>>({});
+	let journalEntries = $state<Record<string, JournalEntry>>({});
+
 	let selectedDate = $state<Date | null>(null);
 	let isModalOpen = $state(false);
 
@@ -22,6 +24,7 @@
 		}
 		return days;
 	}
+
 	const allDays = getDaysInYear(currentYear);
 
 	let today = $state(new Date());
@@ -41,20 +44,24 @@
 	let yearProgress = $derived((daysPassed / allDays.length) * 100);
 
 	onMount(() => {
-		const stored = localStorage.getItem('journal_entries');
-		if (stored) journalEntries = JSON.parse(stored);
+		const initDB = async () => {
+			await db.migrateFromLocalStorage();
+			journalEntries = await db.getAllEntries();
 
-		setTimeout(() => {
-			updatePositions();
-			const todayIndex = allDays.findIndex((day) => isToday(day));
-			if (todayIndex !== -1 && dotElements[todayIndex]) {
-				dotElements[todayIndex].scrollIntoView({
-					behavior: 'smooth',
-					block: 'center',
-					inline: 'center'
-				});
-			}
-		}, 150);
+			setTimeout(() => {
+				updatePositions();
+				const todayIndex = allDays.findIndex((day) => isToday(day));
+				if (todayIndex !== -1 && dotElements[todayIndex]) {
+					dotElements[todayIndex].scrollIntoView({
+						behavior: 'smooth',
+						block: 'center',
+						inline: 'center'
+					});
+				}
+			}, 150);
+		};
+
+		initDB();
 
 		const handleVisibilityChange = () => {
 			if (document.visibilityState === 'visible') refreshDate();
@@ -142,15 +149,27 @@
 		isModalOpen = true;
 	}
 
-	function handleSave(text: string, mood: string) {
+	// --- UPDATED SAVE LOGIC ---
+	async function handleSave(text: string, mood: string) {
 		if (selectedDate) {
 			const dateId = formatDateId(selectedDate);
-			if (!text.trim()) {
+
+			const existingEntry = journalEntries[dateId];
+			const existingImages = existingEntry?.images || [];
+
+			if (!text.trim() && existingImages.length === 0) {
 				delete journalEntries[dateId];
+				await db.deleteEntry(dateId);
 			} else {
-				journalEntries[dateId] = { text, mood };
+				const newEntry: JournalEntry = {
+					text,
+					mood,
+					images: existingImages
+				};
+
+				journalEntries[dateId] = newEntry;
+				await db.saveEntry(dateId, newEntry);
 			}
-			localStorage.setItem('journal_entries', JSON.stringify(journalEntries));
 		}
 	}
 
@@ -217,7 +236,7 @@
                 0 0 0 4px var(--color-iridium), 
                 0 0 0 5px ${moodColor}, 
                 0 0 15px 3px ${moodColor};
-         `;
+        `;
 			} else {
 				return `
             background-color: ${moodColor}; 
