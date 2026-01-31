@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
-	import { ChevronRight, ChevronLeft, Image as ImageIcon } from '@lucide/svelte';
+	import { ChevronRight, ChevronLeft, Image as ImageIcon, X } from '@lucide/svelte';
 	import ColorPicker from './colorPicker.svelte';
 	import chroma from 'chroma-js';
 
@@ -12,7 +12,7 @@
 		entryImages?: Blob[];
 		canGoNext?: boolean;
 		onClose: () => void;
-		onSave: (text: string, mood: string) => void;
+		onSave: (text: string, mood: string, images: Blob[]) => void;
 		onPrev: () => void;
 		onNext: () => void;
 	}
@@ -22,7 +22,7 @@
 		date,
 		entryText = '',
 		entryMood = '',
-		// entryImages = [], // We'll re-enable this later
+		entryImages = [],
 		canGoNext = false,
 		onClose,
 		onSave,
@@ -36,7 +36,10 @@
 	let isBackdropClick = false;
 
 	let fileInput: HTMLInputElement;
+
+	// --- IMAGE STATE ---
 	let images = $state<Blob[]>([]);
+	let previewUrls = $state<string[]>([]);
 
 	let textColor = $derived(
 		chroma.valid(mood) && chroma(mood).luminance() > 0.5 ? '#18181b' : '#fffbeb'
@@ -46,7 +49,19 @@
 		if (isOpen && date) {
 			note = entryText;
 			showPicker = false;
+
+			// Reset & Load (Safe Logic)
 			images = [];
+			previewUrls = [];
+
+			if (entryImages && entryImages.length > 0) {
+				images = [entryImages[0]];
+				try {
+					previewUrls = [URL.createObjectURL(images[0])];
+				} catch (e) {
+					console.error('Skipping invalid image');
+				}
+			}
 
 			if (entryMood && entryMood.startsWith('#')) {
 				mood = entryMood;
@@ -57,24 +72,34 @@
 	});
 
 	function closeAndSave() {
-		onSave(note, mood);
+		onSave(note, mood, images);
 		onClose();
 	}
 
 	function handleNav(direction: 'prev' | 'next') {
-		onSave(note, mood);
+		onSave(note, mood, images);
 		if (direction === 'prev') onPrev();
 		if (direction === 'next') onNext();
 	}
 
+	// --- FILE HANDLERS ---
 	function handleFileSelect(e: Event) {
 		const target = e.target as HTMLInputElement;
 		if (target.files && target.files.length > 0) {
-			const newFiles = Array.from(target.files);
-			images = [...images, ...newFiles];
-
-			console.log('Selected files:', images);
+			const file = target.files[0];
+			if (file.type.startsWith('image/')) {
+				images = [file];
+				if (previewUrls.length > 0) URL.revokeObjectURL(previewUrls[0]);
+				previewUrls = [URL.createObjectURL(file)];
+			}
+			target.value = '';
 		}
+	}
+
+	function removeImage() {
+		if (previewUrls.length > 0) URL.revokeObjectURL(previewUrls[0]);
+		images = [];
+		previewUrls = [];
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -156,31 +181,51 @@
 				</button>
 			</div>
 
-			<textarea
-				bind:value={note}
-				class="mb-4 h-48 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
-				style="--tw-ring-color: {mood};"
-				placeholder="Write your thoughts here..."
-			></textarea>
+			<div class="mb-4 flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
+				<textarea
+					bind:value={note}
+					class="mb-4 h-48 w-full shrink-0 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
+					style="--tw-ring-color: {mood};"
+					placeholder="Write your thoughts here..."
+				></textarea>
+
+				{#if previewUrls.length > 0}
+					<div
+						class="group relative w-fit overflow-hidden rounded-xl border border-white/10 bg-zinc-950"
+					>
+						<img src={previewUrls[0]} alt="Memory" class="h-32 w-auto object-cover" />
+						<button
+							onclick={removeImage}
+							class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white/80 shadow-lg backdrop-blur-sm transition-all hover:bg-red-500 hover:text-white"
+							title="Remove photo"
+						>
+							<X size={14} />
+						</button>
+					</div>
+				{/if}
+			</div>
 
 			<div class="mt-auto grid grid-cols-2 gap-4 md:flex md:items-center">
 				<input
 					bind:this={fileInput}
 					type="file"
-					accept="image/*"
-					multiple
+					accept=".png, .jpg, .jpeg, .svg, .webp, .heic"
 					class="hidden"
 					onchange={handleFileSelect}
 				/>
 
-				<button
-					onclick={() => fileInput.click()}
-					class="col-span-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]
-          md:order-2 md:mr-auto md:w-auto md:px-5 md:py-1.5"
-				>
-					<ImageIcon size={18} />
-					<span class="text-sm font-medium">Add a photo</span>
-				</button>
+				{#if previewUrls.length === 0}
+					<button
+						onclick={() => fileInput.click()}
+						class="col-span-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]
+            md:order-2 md:mr-auto md:w-auto md:px-5 md:py-1.5"
+					>
+						<ImageIcon size={18} />
+						<span class="text-sm font-medium">Add a photo</span>
+					</button>
+				{:else}
+					<div class="hidden md:order-2 md:mr-auto md:block"></div>
+				{/if}
 
 				<div class="relative col-span-1 flex items-center md:order-1">
 					<button
