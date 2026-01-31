@@ -9,6 +9,7 @@ export default defineConfig({
 		sveltekit(),
 		SvelteKitPWA({
 			registerType: 'autoUpdate',
+			includeAssets: ['favicon.png', 'journalIcon.png'],
 			manifest: {
 				name: 'My Journal',
 				short_name: 'Journal',
@@ -28,8 +29,19 @@ export default defineConfig({
 						src: 'journalIcon.png',
 						sizes: '512x512',
 						type: 'image/png'
+					},
+					{
+						src: 'journalIcon.png',
+						sizes: '512x512',
+						type: 'image/png',
+						purpose: 'any maskable'
 					}
 				]
+			},
+			workbox: {
+				cleanupOutdatedCaches: true,
+				clientsClaim: true,
+				skipWaiting: true
 			}
 		})
 	]
