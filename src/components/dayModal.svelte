@@ -35,7 +35,9 @@
 	let showPicker = $state(false);
 	let isBackdropClick = false;
 
-	let fileInput: HTMLInputElement;
+	let showDeleteConfirm = $state(false);
+
+	let fileInput = $state<HTMLInputElement>();
 
 	let images = $state<Blob[]>([]);
 	let previewUrls = $state<string[]>([]);
@@ -51,6 +53,7 @@
 			note = entryText;
 			showPicker = false;
 			isFullScreen = false;
+			showDeleteConfirm = false;
 			images = [];
 			previewUrls = [];
 
@@ -96,19 +99,25 @@
 		}
 	}
 
-	function removeImage(e: Event) {
+	function requestDelete(e: Event) {
 		e.stopPropagation();
+		showDeleteConfirm = true;
+	}
+
+	function confirmDelete() {
 		if (previewUrls.length > 0) URL.revokeObjectURL(previewUrls[0]);
 		images = [];
 		previewUrls = [];
+		showDeleteConfirm = false;
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
-			if (isFullScreen) isFullScreen = false;
+			if (showDeleteConfirm) showDeleteConfirm = false;
+			else if (isFullScreen) isFullScreen = false;
 			else if (showPicker) showPicker = false;
 			else closeAndSave();
-		} else if (!isFullScreen) {
+		} else if (!isFullScreen && !showDeleteConfirm) {
 			if (e.key === 'ArrowLeft') handleNav('prev');
 			else if (e.key === 'ArrowRight' && canGoNext) handleNav('next');
 		}
@@ -209,8 +218,8 @@
 							<div
 								role="button"
 								tabindex="0"
-								onclick={removeImage}
-								onkeydown={(e) => e.key === 'Enter' && removeImage(e)}
+								onclick={requestDelete}
+								onkeydown={(e) => e.key === 'Enter' && requestDelete(e)}
 								class="absolute top-2 right-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 shadow-lg backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 hover:text-white"
 								title="Remove photo"
 							>
@@ -226,7 +235,7 @@
 							onchange={handleFileSelect}
 						/>
 						<button
-							onclick={() => fileInput.click()}
+							onclick={() => fileInput?.click()}
 							class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]"
 						>
 							<ImageIcon size={18} />
@@ -281,10 +290,47 @@
 		</div>
 	</div>
 
+	{#if showDeleteConfirm}
+		<div
+			transition:fade={{ duration: 150 }}
+			class="fixed inset-0 z-110 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<div
+				class="w-full max-w-sm rounded-xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
+				transition:scale={{ start: 0.95, duration: 150 }}
+			>
+				<h3 class="text-lg font-semibold text-white">Delete photo?</h3>
+				<p class="mt-2 text-sm text-zinc-400">
+					Are you sure you want to remove this memory? This action cannot be undone.
+				</p>
+
+				<div class="mt-6 flex justify-end gap-3">
+					<button
+						class="rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+						onclick={() => (showDeleteConfirm = false)}
+					>
+						Cancel
+					</button>
+					<button
+						class="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+						onclick={confirmDelete}
+					>
+						Delete
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
 	{#if isFullScreen && previewUrls.length > 0}
 		<div
 			transition:fade={{ duration: 200 }}
-			class="fixed inset-0 z-[100] flex cursor-zoom-out items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+			class="fixed inset-0 z-100 flex cursor-zoom-out items-center justify-center bg-black/90 p-4 backdrop-blur-md"
 			onclick={() => (isFullScreen = false)}
 			role="button"
 			tabindex="0"
