@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { fade, fly } from 'svelte/transition';
-	import { ChevronRight, ChevronLeft } from '@lucide/svelte';
+	import { fade, fly, scale } from 'svelte/transition';
+	import { ChevronRight, ChevronLeft, Image as ImageIcon, X, Maximize2 } from '@lucide/svelte';
 	import ColorPicker from './colorPicker.svelte';
 	import chroma from 'chroma-js';
 
@@ -9,9 +9,10 @@
 		date: Date | null;
 		entryText?: string;
 		entryMood?: string;
+		entryImages?: Blob[];
 		canGoNext?: boolean;
 		onClose: () => void;
-		onSave: (text: string, mood: string) => void;
+		onSave: (text: string, mood: string, images: Blob[]) => void;
 		onPrev: () => void;
 		onNext: () => void;
 	}
@@ -21,6 +22,7 @@
 		date,
 		entryText = '',
 		entryMood = '',
+		entryImages = [],
 		canGoNext = false,
 		onClose,
 		onSave,
@@ -33,6 +35,14 @@
 	let showPicker = $state(false);
 	let isBackdropClick = false;
 
+	let showDeleteConfirm = $state(false);
+	let fileInput = $state<HTMLInputElement>();
+
+	let images = $state<Blob[]>([]);
+	let previewUrls = $state<string[]>([]);
+
+	let isFullScreen = $state(false);
+
 	let textColor = $derived(
 		chroma.valid(mood) && chroma(mood).luminance() > 0.5 ? '#18181b' : '#fffbeb'
 	);
@@ -41,6 +51,20 @@
 		if (isOpen && date) {
 			note = entryText;
 			showPicker = false;
+			isFullScreen = false;
+			showDeleteConfirm = false;
+			images = [];
+			previewUrls = [];
+
+			if (entryImages && entryImages.length > 0) {
+				try {
+					const rawBlob = structuredClone(entryImages[0]);
+					images = [rawBlob];
+					previewUrls = [URL.createObjectURL(rawBlob)];
+				} catch (err) {
+					console.error('Failed to load image:', err);
+				}
+			}
 
 			if (entryMood && entryMood.startsWith('#')) {
 				mood = entryMood;
@@ -51,24 +75,50 @@
 	});
 
 	function closeAndSave() {
-		onSave(note, mood);
+		onSave(note, mood, images);
 		onClose();
 	}
 
 	function handleNav(direction: 'prev' | 'next') {
-		onSave(note, mood);
+		onSave(note, mood, images);
 		if (direction === 'prev') onPrev();
 		if (direction === 'next') onNext();
 	}
 
+	function handleFileSelect(e: Event) {
+		const target = e.target as HTMLInputElement;
+		if (target.files && target.files.length > 0) {
+			const file = target.files[0];
+			if (file.type.startsWith('image/')) {
+				images = [file];
+				if (previewUrls.length > 0) URL.revokeObjectURL(previewUrls[0]);
+				previewUrls = [URL.createObjectURL(file)];
+			}
+			target.value = '';
+		}
+	}
+
+	function requestDelete(e: Event) {
+		e.stopPropagation();
+		showDeleteConfirm = true;
+	}
+
+	function confirmDelete() {
+		if (previewUrls.length > 0) URL.revokeObjectURL(previewUrls[0]);
+		images = [];
+		previewUrls = [];
+		showDeleteConfirm = false;
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
-			if (showPicker) showPicker = false;
+			if (showDeleteConfirm) showDeleteConfirm = false;
+			else if (isFullScreen) isFullScreen = false;
+			else if (showPicker) showPicker = false;
 			else closeAndSave();
-		} else if (e.key === 'ArrowLeft') {
-			handleNav('prev');
-		} else if (e.key === 'ArrowRight' && canGoNext) {
-			handleNav('next');
+		} else if (!isFullScreen && !showDeleteConfirm) {
+			if (e.key === 'ArrowLeft') handleNav('prev');
+			else if (e.key === 'ArrowRight' && canGoNext) handleNav('next');
 		}
 	}
 
@@ -101,7 +151,7 @@
 		}}
 	>
 		<div
-			class="w-full max-w-xl cursor-default rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl transition-all"
+			class="flex max-h-[90vh] w-full max-w-xl cursor-default flex-col rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl transition-all"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
@@ -109,7 +159,7 @@
 			onmousedown={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.stopPropagation()}
 		>
-			<div class="mb-6 flex items-center justify-between">
+			<div class="mb-6 flex shrink-0 items-center justify-between">
 				<button
 					onclick={() => handleNav('prev')}
 					class="flex h-10 w-10 items-center justify-center rounded-full text-zinc-400 transition-all hover:bg-zinc-800 hover:text-white active:scale-95"
@@ -141,14 +191,60 @@
 				</button>
 			</div>
 
-			<textarea
-				bind:value={note}
-				class="h-48 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
-				style="--tw-ring-color: {mood};"
-				placeholder="Write your thoughts here..."
-			></textarea>
+			<div class="min-h-0 flex-1 overflow-y-auto p-1">
+				<textarea
+					bind:value={note}
+					class="h-48 w-full resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
+					style="--tw-ring-color: {mood};"
+					placeholder="Write your thoughts here..."
+				></textarea>
 
-			<div class="mt-6 flex items-center justify-between">
+				<div class="mt-4">
+					{#if previewUrls.length > 0}
+						<button
+							class="group relative w-fit cursor-zoom-in overflow-hidden rounded-xl border border-white/10 bg-zinc-950 transition-transform active:scale-[0.98]"
+							onclick={() => (isFullScreen = true)}
+							aria-label="View full size image"
+						>
+							<img src={previewUrls[0]} alt="Memory" class="h-32 w-auto object-cover" />
+
+							<div
+								class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
+							>
+								<Maximize2 class="text-white drop-shadow-md" size={24} />
+							</div>
+
+							<div
+								role="button"
+								tabindex="0"
+								onclick={requestDelete}
+								onkeydown={(e) => e.key === 'Enter' && requestDelete(e)}
+								class="absolute top-2 right-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white/80 opacity-100 shadow-lg backdrop-blur-sm transition-all hover:bg-red-500 hover:text-white md:opacity-0 md:group-hover:opacity-100"
+								title="Remove photo"
+							>
+								<X size={14} />
+							</div>
+						</button>
+					{:else}
+						<input
+							bind:this={fileInput}
+							type="file"
+							accept=".png, .jpg, .jpeg, .svg, .webp, .heic"
+							class="hidden"
+							onchange={handleFileSelect}
+						/>
+						<button
+							onclick={() => fileInput?.click()}
+							class="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]"
+						>
+							<ImageIcon size={18} />
+							<span class="text-sm font-medium">Add a photo</span>
+						</button>
+					{/if}
+				</div>
+			</div>
+
+			<div class="mt-6 flex shrink-0 items-center justify-between">
 				<div class="relative">
 					<button
 						onclick={() => (showPicker = !showPicker)}
@@ -192,4 +288,68 @@
 			</div>
 		</div>
 	</div>
+
+	{#if showDeleteConfirm}
+		<div
+			transition:fade={{ duration: 150 }}
+			class="fixed inset-0 z-110 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<div
+				class="w-full max-w-sm rounded-xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
+				transition:scale={{ start: 0.95, duration: 150 }}
+			>
+				<h3 class="text-lg font-semibold text-white">Delete photo?</h3>
+				<p class="mt-2 text-sm text-zinc-400">
+					Are you sure you want to remove this memory? This action cannot be undone.
+				</p>
+
+				<div class="mt-6 flex justify-end gap-3">
+					<button
+						class="rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+						onclick={() => (showDeleteConfirm = false)}
+					>
+						Cancel
+					</button>
+					<button
+						class="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+						onclick={confirmDelete}
+					>
+						Delete
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if isFullScreen && previewUrls.length > 0}
+		<div
+			transition:fade={{ duration: 200 }}
+			class="fixed inset-0 z-100 flex cursor-zoom-out items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+			onclick={() => (isFullScreen = false)}
+			role="button"
+			tabindex="0"
+			onkeydown={(e) => {
+				if (e.key === 'Escape') isFullScreen = false;
+			}}
+		>
+			<img
+				src={previewUrls[0]}
+				alt="Full screen memory"
+				transition:scale={{ start: 0.9, duration: 200 }}
+				class="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+			/>
+
+			<button
+				class="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+				onclick={() => (isFullScreen = false)}
+			>
+				<X size={24} />
+			</button>
+		</div>
+	{/if}
 {/if}

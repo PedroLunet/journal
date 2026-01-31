@@ -26,7 +26,6 @@
 	}
 
 	const allDays = getDaysInYear(currentYear);
-
 	let today = $state(new Date());
 
 	$effect(() => {
@@ -149,22 +148,22 @@
 		isModalOpen = true;
 	}
 
-	// --- UPDATED SAVE LOGIC ---
-	async function handleSave(text: string, mood: string) {
+	async function handleSave(text: string, mood: string, images: Blob[]) {
 		if (selectedDate) {
 			const dateId = formatDateId(selectedDate);
 
-			const existingEntry = journalEntries[dateId];
-			const existingImages = existingEntry?.images || [];
+			const hasImages = images && images.length > 0;
 
-			if (!text.trim() && existingImages.length === 0) {
+			if (!text.trim() && !hasImages) {
 				delete journalEntries[dateId];
 				await db.deleteEntry(dateId);
 			} else {
+				const cleanImages = images ? [...images] : [];
+
 				const newEntry: JournalEntry = {
 					text,
 					mood,
-					images: existingImages
+					images: cleanImages
 				};
 
 				journalEntries[dateId] = newEntry;
@@ -193,7 +192,6 @@
 	}
 
 	// --- STYLING ---
-
 	function getDotClasses(day: Date) {
 		const entry = getEntry(day);
 		const current = isToday(day);
@@ -319,9 +317,10 @@
 		date={selectedDate}
 		entryText={selectedDate ? journalEntries[formatDateId(selectedDate)]?.text : ''}
 		entryMood={selectedDate ? journalEntries[formatDateId(selectedDate)]?.mood : undefined}
+		entryImages={selectedDate ? journalEntries[formatDateId(selectedDate)]?.images : []}
 		canGoNext={canGoNext(selectedDate)}
 		onClose={() => (isModalOpen = false)}
-		onSave={(text, mood) => handleSave(text, mood)}
+		onSave={(text, mood, images) => handleSave(text, mood, images)}
 		onPrev={handlePrevDay}
 		onNext={handleNextDay}
 	/>
