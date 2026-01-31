@@ -52,11 +52,12 @@
 			previewUrls = [];
 
 			if (entryImages && entryImages.length > 0) {
-				images = [entryImages[0]];
 				try {
-					previewUrls = [URL.createObjectURL(images[0])];
-				} catch (e) {
-					console.error('Skipping invalid image');
+					const rawBlob = structuredClone(entryImages[0]);
+					images = [rawBlob];
+					previewUrls = [URL.createObjectURL(rawBlob)];
+				} catch (err) {
+					console.error('Failed to load image:', err);
 				}
 			}
 
@@ -180,7 +181,7 @@
 			<div class="mb-4 flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
 				<textarea
 					bind:value={note}
-					class="h-48 w-full shrink-0 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
+					class="mb-4 h-48 w-full shrink-0 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
 					style="--tw-ring-color: {mood};"
 					placeholder="Write your thoughts here..."
 				></textarea>
@@ -192,7 +193,7 @@
 						<img src={previewUrls[0]} alt="Memory" class="h-32 w-auto object-cover" />
 						<button
 							onclick={removeImage}
-							class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white/80 shadow-lg backdrop-blur-sm transition-all group-hover:bg-red-500 group-hover:text-white"
+							class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 shadow-lg backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 hover:text-white"
 							title="Remove photo"
 						>
 							<X size={14} />
