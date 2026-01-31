@@ -180,7 +180,7 @@
 			<div class="mb-4 flex min-h-0 flex-1 flex-col overflow-y-auto pr-1">
 				<textarea
 					bind:value={note}
-					class="mb-4 h-48 w-full shrink-0 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
+					class="h-48 w-full shrink-0 resize-none rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-zinc-200 placeholder-zinc-600 focus:ring-1 focus:outline-none"
 					style="--tw-ring-color: {mood};"
 					placeholder="Write your thoughts here..."
 				></textarea>
