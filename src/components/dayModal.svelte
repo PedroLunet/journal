@@ -40,15 +40,37 @@
 
 	let images = $state<Blob[]>([]);
 	let previewUrls = $state<string[]>([]);
-
 	let isFullScreen = $state(false);
+
+	let isInitialized = $state(false);
 
 	let textColor = $derived(
 		chroma.valid(mood) && chroma(mood).luminance() > 0.5 ? '#18181b' : '#fffbeb'
 	);
 
+	let saveTimeout: ReturnType<typeof setTimeout>;
+
+	function debouncedSave() {
+		clearTimeout(saveTimeout);
+		saveTimeout = setTimeout(() => {
+			if (isOpen && isInitialized) {
+				onSave(note, mood, images);
+			}
+		}, 1000);
+	}
+
+	$effect(() => {
+		if (isOpen && isInitialized) {
+			const _n = note;
+			const _m = mood;
+			debouncedSave();
+		}
+	});
+
 	$effect(() => {
 		if (isOpen && date) {
+			clearTimeout(saveTimeout);
+
 			note = entryText;
 			showPicker = false;
 			isFullScreen = false;
@@ -71,15 +93,21 @@
 			} else {
 				mood = '#eb9e8f';
 			}
+
+			isInitialized = true;
+		} else {
+			isInitialized = false;
 		}
 	});
 
 	function closeAndSave() {
+		clearTimeout(saveTimeout);
 		onSave(note, mood, images);
 		onClose();
 	}
 
 	function handleNav(direction: 'prev' | 'next') {
+		clearTimeout(saveTimeout);
 		onSave(note, mood, images);
 		if (direction === 'prev') onPrev();
 		if (direction === 'next') onNext();
@@ -93,6 +121,8 @@
 				images = [file];
 				if (previewUrls.length > 0) URL.revokeObjectURL(previewUrls[0]);
 				previewUrls = [URL.createObjectURL(file)];
+				clearTimeout(saveTimeout);
+				onSave(note, mood, images);
 			}
 			target.value = '';
 		}
@@ -108,6 +138,9 @@
 		images = [];
 		previewUrls = [];
 		showDeleteConfirm = false;
+
+		clearTimeout(saveTimeout);
+		onSave(note, mood, images);
 	}
 
 	function handleKeydown(e: KeyboardEvent) {

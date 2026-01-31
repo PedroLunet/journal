@@ -73,7 +73,6 @@ export const db = {
 				}
 				await tx.done;
 
-				console.log('Migration to IndexedDB successful');
 				localStorage.removeItem('journal_entries');
 			} catch (e) {
 				console.error('Migration failed', e);
