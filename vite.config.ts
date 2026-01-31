@@ -9,7 +9,6 @@ export default defineConfig({
 		sveltekit(),
 		SvelteKitPWA({
 			registerType: 'autoUpdate',
-			includeAssets: ['favicon.png', 'apple-touch-icon.png'],
 			manifest: {
 				name: 'My Journal',
 				short_name: 'Journal',
@@ -21,12 +20,12 @@ export default defineConfig({
 				start_url: '/',
 				icons: [
 					{
-						src: 'pwa-192x192.png',
+						src: 'journalIcon.png',
 						sizes: '192x192',
 						type: 'image/png'
 					},
 					{
-						src: 'pwa-512x512.png',
+						src: 'journalIcon.png',
 						sizes: '512x512',
 						type: 'image/png'
 					}
