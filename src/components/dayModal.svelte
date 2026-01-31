@@ -36,7 +36,6 @@
 	let isBackdropClick = false;
 
 	let showDeleteConfirm = $state(false);
-
 	let fileInput = $state<HTMLInputElement>();
 
 	let images = $state<Blob[]>([]);
@@ -220,7 +219,7 @@
 								tabindex="0"
 								onclick={requestDelete}
 								onkeydown={(e) => e.key === 'Enter' && requestDelete(e)}
-								class="absolute top-2 right-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 shadow-lg backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 hover:text-white"
+								class="absolute top-2 right-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white/80 opacity-100 shadow-lg backdrop-blur-sm transition-all hover:bg-red-500 hover:text-white md:opacity-0 md:group-hover:opacity-100"
 								title="Remove photo"
 							>
 								<X size={14} />
@@ -293,7 +292,7 @@
 	{#if showDeleteConfirm}
 		<div
 			transition:fade={{ duration: 150 }}
-			class="fixed inset-0 z-110 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+			class="fixed inset-0 z-110 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
