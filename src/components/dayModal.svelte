@@ -37,7 +37,6 @@
 
 	let fileInput: HTMLInputElement;
 
-	// --- IMAGE STATE ---
 	let images = $state<Blob[]>([]);
 	let previewUrls = $state<string[]>([]);
 
@@ -49,8 +48,6 @@
 		if (isOpen && date) {
 			note = entryText;
 			showPicker = false;
-
-			// Reset & Load (Safe Logic)
 			images = [];
 			previewUrls = [];
 
@@ -82,7 +79,6 @@
 		if (direction === 'next') onNext();
 	}
 
-	// --- FILE HANDLERS ---
 	function handleFileSelect(e: Event) {
 		const target = e.target as HTMLInputElement;
 		if (target.files && target.files.length > 0) {
@@ -196,7 +192,7 @@
 						<img src={previewUrls[0]} alt="Memory" class="h-32 w-auto object-cover" />
 						<button
 							onclick={removeImage}
-							class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white/80 shadow-lg backdrop-blur-sm transition-all hover:bg-red-500 hover:text-white"
+							class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white/80 shadow-lg backdrop-blur-sm transition-all group-hover:bg-red-500 group-hover:text-white"
 							title="Remove photo"
 						>
 							<X size={14} />
