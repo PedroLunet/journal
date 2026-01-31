@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { fade, fly } from 'svelte/transition';
-	import { ChevronRight, ChevronLeft, Image as ImageIcon, X } from '@lucide/svelte';
+	import { fade, fly, scale } from 'svelte/transition';
+	import { ChevronRight, ChevronLeft, Image as ImageIcon, X, Maximize2 } from '@lucide/svelte';
 	import ColorPicker from './colorPicker.svelte';
 	import chroma from 'chroma-js';
 
@@ -40,6 +40,8 @@
 	let images = $state<Blob[]>([]);
 	let previewUrls = $state<string[]>([]);
 
+	let isFullScreen = $state(false);
+
 	let textColor = $derived(
 		chroma.valid(mood) && chroma(mood).luminance() > 0.5 ? '#18181b' : '#fffbeb'
 	);
@@ -48,6 +50,7 @@
 		if (isOpen && date) {
 			note = entryText;
 			showPicker = false;
+			isFullScreen = false;
 			images = [];
 			previewUrls = [];
 
@@ -93,7 +96,8 @@
 		}
 	}
 
-	function removeImage() {
+	function removeImage(e: Event) {
+		e.stopPropagation();
 		if (previewUrls.length > 0) URL.revokeObjectURL(previewUrls[0]);
 		images = [];
 		previewUrls = [];
@@ -101,12 +105,12 @@
 
 	function handleKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
-			if (showPicker) showPicker = false;
+			if (isFullScreen) isFullScreen = false;
+			else if (showPicker) showPicker = false;
 			else closeAndSave();
-		} else if (e.key === 'ArrowLeft') {
-			handleNav('prev');
-		} else if (e.key === 'ArrowRight' && canGoNext) {
-			handleNav('next');
+		} else if (!isFullScreen) {
+			if (e.key === 'ArrowLeft') handleNav('prev');
+			else if (e.key === 'ArrowRight' && canGoNext) handleNav('next');
 		}
 	}
 
@@ -189,18 +193,30 @@
 
 				<div class="mt-4">
 					{#if previewUrls.length > 0}
-						<div
-							class="group relative w-fit overflow-hidden rounded-xl border border-white/10 bg-zinc-950"
+						<button
+							class="group relative w-fit cursor-zoom-in overflow-hidden rounded-xl border border-white/10 bg-zinc-950 transition-transform active:scale-[0.98]"
+							onclick={() => (isFullScreen = true)}
+							aria-label="View full size image"
 						>
 							<img src={previewUrls[0]} alt="Memory" class="h-32 w-auto object-cover" />
-							<button
+
+							<div
+								class="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 transition-opacity group-hover:opacity-100"
+							>
+								<Maximize2 class="text-white drop-shadow-md" size={24} />
+							</div>
+
+							<div
+								role="button"
+								tabindex="0"
 								onclick={removeImage}
-								class="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 shadow-lg backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 hover:text-white"
+								onkeydown={(e) => e.key === 'Enter' && removeImage(e)}
+								class="absolute top-2 right-2 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white/80 opacity-0 shadow-lg backdrop-blur-sm transition-all group-hover:opacity-100 hover:bg-red-500 hover:text-white"
 								title="Remove photo"
 							>
 								<X size={14} />
-							</button>
-						</div>
+							</div>
+						</button>
 					{:else}
 						<input
 							bind:this={fileInput}
@@ -264,4 +280,31 @@
 			</div>
 		</div>
 	</div>
+
+	{#if isFullScreen && previewUrls.length > 0}
+		<div
+			transition:fade={{ duration: 200 }}
+			class="fixed inset-0 z-[100] flex cursor-zoom-out items-center justify-center bg-black/90 p-4 backdrop-blur-md"
+			onclick={() => (isFullScreen = false)}
+			role="button"
+			tabindex="0"
+			onkeydown={(e) => {
+				if (e.key === 'Escape') isFullScreen = false;
+			}}
+		>
+			<img
+				src={previewUrls[0]}
+				alt="Full screen memory"
+				transition:scale={{ start: 0.9, duration: 200 }}
+				class="max-h-full max-w-full rounded-lg object-contain shadow-2xl"
+			/>
+
+			<button
+				class="absolute top-4 right-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+				onclick={() => (isFullScreen = false)}
+			>
+				<X size={24} />
+			</button>
+		</div>
+	{/if}
 {/if}
