@@ -22,6 +22,7 @@
 		date,
 		entryText = '',
 		entryMood = '',
+		// entryImages = [], // We'll re-enable this later
 		canGoNext = false,
 		onClose,
 		onSave,
@@ -34,6 +35,9 @@
 	let showPicker = $state(false);
 	let isBackdropClick = false;
 
+	let fileInput: HTMLInputElement;
+	let images = $state<Blob[]>([]);
+
 	let textColor = $derived(
 		chroma.valid(mood) && chroma(mood).luminance() > 0.5 ? '#18181b' : '#fffbeb'
 	);
@@ -42,6 +46,7 @@
 		if (isOpen && date) {
 			note = entryText;
 			showPicker = false;
+			images = [];
 
 			if (entryMood && entryMood.startsWith('#')) {
 				mood = entryMood;
@@ -60,6 +65,16 @@
 		onSave(note, mood);
 		if (direction === 'prev') onPrev();
 		if (direction === 'next') onNext();
+	}
+
+	function handleFileSelect(e: Event) {
+		const target = e.target as HTMLInputElement;
+		if (target.files && target.files.length > 0) {
+			const newFiles = Array.from(target.files);
+			images = [...images, ...newFiles];
+
+			console.log('Selected files:', images);
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -149,7 +164,17 @@
 			></textarea>
 
 			<div class="mt-auto grid grid-cols-2 gap-4 md:flex md:items-center">
+				<input
+					bind:this={fileInput}
+					type="file"
+					accept="image/*"
+					multiple
+					class="hidden"
+					onchange={handleFileSelect}
+				/>
+
 				<button
+					onclick={() => fileInput.click()}
 					class="col-span-2 flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-zinc-800 py-3 text-zinc-500 transition-colors hover:border-zinc-700 hover:bg-zinc-800/50 hover:text-zinc-300 active:scale-[0.99]
           md:order-2 md:mr-auto md:w-auto md:px-5 md:py-1.5"
 				>
