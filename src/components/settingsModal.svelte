@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { db } from '../lib/db';
-	import { Download, Upload } from '@lucide/svelte';
+	import { Download, Upload, X } from '@lucide/svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
@@ -85,6 +85,14 @@
 			class="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl"
 			transition:fly={{ y: 20, duration: 300, easing: cubicOut }}
 		>
+			<button
+				onclick={onClose}
+				class="absolute top-4 right-4 rounded-full p-1 text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-zinc-200"
+				aria-label="Close"
+			>
+				<X class="h-5 w-5" />
+			</button>
+
 			<div class="p-6">
 				<h2 class="mb-2 text-xl font-bold text-salmon">Data & Backup</h2>
 				<p class="mb-6 text-sm text-zinc-400">
