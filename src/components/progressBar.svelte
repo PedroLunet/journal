@@ -31,7 +31,7 @@
 </script>
 
 <div
-	class="relative flex items-center justify-center select-none"
+	class="relative hidden items-center justify-center select-none md:flex"
 	style="width: {size}px; height: {size}px;"
 >
 	<svg
