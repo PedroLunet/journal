@@ -197,6 +197,7 @@
 		const current = isToday(day);
 		const future = isFuture(day);
 		const first = isFirstOfMonth(day);
+		const past = !future && !current;
 
 		let classes = 'h-1 w-1 rounded-full transition-all group-hover:scale-[2] duration-250 ';
 
@@ -213,7 +214,10 @@
 		}
 
 		if (first && !entry) {
-			classes += 'shadow-[0_0_10px_2px_var(--color-rose)] ';
+			if (!past) {
+				classes += 'shadow-[0_0_10px_2px_var(--color-rose)] ';
+			}
+
 			if (!future) classes += 'group-hover:shadow-[0_0_10px_0.5px_var(--color-rose)] ';
 		}
 
