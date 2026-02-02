@@ -144,14 +144,26 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (!isOpen) return;
+
 		if (e.key === 'Escape') {
 			if (showDeleteConfirm) showDeleteConfirm = false;
 			else if (isFullScreen) isFullScreen = false;
 			else if (showPicker) showPicker = false;
 			else closeAndSave();
-		} else if (!isFullScreen && !showDeleteConfirm) {
-			if (e.key === 'ArrowLeft') handleNav('prev');
-			else if (e.key === 'ArrowRight' && canGoNext) handleNav('next');
+			return;
+		}
+
+		if (!isFullScreen && !showDeleteConfirm) {
+			const target = e.target as HTMLElement;
+			const isEditingText =
+				target.tagName === 'TEXTAREA' ||
+				(target.tagName === 'INPUT' && target.getAttribute('type') === 'text');
+
+			if (!isEditingText) {
+				if (e.key === 'ArrowLeft') handleNav('prev');
+				else if (e.key === 'ArrowRight' && canGoNext) handleNav('next');
+			}
 		}
 	}
 
