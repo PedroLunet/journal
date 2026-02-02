@@ -14,6 +14,12 @@
 	let isImporting = $state(false);
 	let fileInput: HTMLInputElement = $state()!;
 
+	function handleKeydown(e: KeyboardEvent) {
+		if (isOpen && e.key === 'Escape') {
+			onClose();
+		}
+	}
+
 	async function handleExport() {
 		isExporting = true;
 		try {
@@ -67,6 +73,8 @@
 		fileInput.click();
 	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 {#if isOpen}
 	<div
