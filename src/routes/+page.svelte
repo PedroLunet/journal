@@ -1,6 +1,7 @@
 <script lang="ts">
 	import DayModal from '../components/dayModal.svelte';
 	import SettingsModal from '../components/settingsModal.svelte';
+	import SearchModal from '../components/searchModal.svelte';
 	import CircularProgress from '../components/progressBar.svelte';
 	import { onMount } from 'svelte';
 	import { db, type JournalEntry } from '../lib/db';
@@ -10,6 +11,7 @@
 	let selectedDate = $state<Date | null>(null);
 	let isModalOpen = $state(false);
 	let isSettingsOpen = $state(false);
+	let isSearchOpen = $state(false);
 
 	let dotElements = $state<HTMLElement[]>([]);
 	let dotPositions: { x: number; y: number }[] = [];
@@ -193,6 +195,13 @@
 		return !isFuture(nextDay) && nextDay.getFullYear() === currentYear;
 	}
 
+	function handleGlobalKeydown(e: KeyboardEvent) {
+		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+			e.preventDefault();
+			isSearchOpen = !isSearchOpen;
+		}
+	}
+
 	// --- STYLING ---
 	function getDotClasses(day: Date) {
 		const entry = getEntry(day);
@@ -253,7 +262,7 @@
 	}
 </script>
 
-<svelte:window onresize={updatePositions} />
+<svelte:window onresize={updatePositions} onkeydown={handleGlobalKeydown} />
 
 <div
 	class="flex h-full w-full flex-col"
@@ -283,6 +292,29 @@
 			<div class="h-10 w-px bg-zinc-800"></div>
 
 			<div class="flex gap-2">
+				<button
+					onclick={() => (isSearchOpen = true)}
+					class="group rounded-full bg-zinc-900/50 p-3 transition-all hover:bg-zinc-800 hover:text-salmon active:scale-95"
+					aria-label="Search"
+					title="Search (Cmd+K)"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="text-zinc-400 transition-colors group-hover:text-salmon"
+					>
+						<circle cx="11" cy="11" r="8"></circle>
+						<line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+					</svg>
+				</button>
+
 				<button
 					onclick={() => (isSettingsOpen = true)}
 					class="group rounded-full bg-zinc-900/50 p-3 transition-all hover:bg-zinc-800 hover:text-salmon active:scale-95"
@@ -364,5 +396,12 @@
 		isOpen={isSettingsOpen}
 		onClose={() => (isSettingsOpen = false)}
 		onImportSuccess={() => location.reload()}
+	/>
+
+	<SearchModal
+		isOpen={isSearchOpen}
+		onClose={() => (isSearchOpen = false)}
+		entries={journalEntries}
+		onSelectDate={(date) => openModal(date)}
 	/>
 </div>
