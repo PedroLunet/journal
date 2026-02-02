@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { db } from '../lib/db';
 	import { Download, Upload } from '@lucide/svelte';
+	import { fade, fly } from 'svelte/transition';
+	import { cubicOut } from 'svelte/easing';
 
 	let { isOpen, onClose, onImportSuccess } = $props<{
 		isOpen: boolean;
@@ -73,13 +75,15 @@
 		aria-modal="true"
 	>
 		<button
-			class="absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+			class="absolute inset-0 bg-black/60 backdrop-blur-sm"
 			onclick={onClose}
 			aria-label="Close modal"
+			transition:fade={{ duration: 200 }}
 		></button>
 
 		<div
-			class="relative w-full max-w-md transform overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl transition-all"
+			class="relative w-full max-w-md overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-2xl"
+			transition:fly={{ y: 20, duration: 300, easing: cubicOut }}
 		>
 			<div class="p-6">
 				<h2 class="mb-2 text-xl font-bold text-salmon">Data & Backup</h2>
@@ -91,36 +95,44 @@
 					<button
 						onclick={handleExport}
 						disabled={isExporting}
-						class="flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left transition-colors hover:bg-zinc-700 active:bg-zinc-600"
+						class="group hover:bg-zinc-750 flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:bg-zinc-700"
 					>
 						<div>
-							<div class="font-medium text-zinc-200">Download Backup</div>
-							<div class="text-xs text-zinc-500">Save entries and photos as a single file</div>
+							<div class="font-medium text-zinc-200 group-hover:text-white">Download Backup</div>
+							<div class="text-xs text-zinc-500 group-hover:text-zinc-400">
+								Save entries and photos as a single file
+							</div>
 						</div>
 						{#if isExporting}
 							<div
 								class="h-5 w-5 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
 							></div>
 						{:else}
-							<Download class="h-5 w-5 text-zinc-400" />
+							<Download
+								class="h-5 w-5 text-zinc-400 transition-transform duration-300 group-hover:scale-110 group-hover:text-salmon"
+							/>
 						{/if}
 					</button>
 
 					<button
 						onclick={triggerFileSelect}
 						disabled={isImporting}
-						class="flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left transition-colors hover:bg-zinc-700 active:bg-zinc-600"
+						class="group hover:bg-zinc-750 flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:bg-zinc-700"
 					>
 						<div>
-							<div class="font-medium text-zinc-200">Restore Backup</div>
-							<div class="text-xs text-zinc-500">Import a previously saved JSON file</div>
+							<div class="font-medium text-zinc-200 group-hover:text-white">Restore Backup</div>
+							<div class="text-xs text-zinc-500 group-hover:text-zinc-400">
+								Import a previously saved JSON file
+							</div>
 						</div>
 						{#if isImporting}
 							<div
 								class="h-5 w-5 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
 							></div>
 						{:else}
-							<Upload class="h-5 w-5 text-zinc-400" />
+							<Upload
+								class="h-5 w-5 text-zinc-400 transition-transform duration-300 group-hover:scale-110 group-hover:text-emerald-400"
+							/>
 						{/if}
 					</button>
 
