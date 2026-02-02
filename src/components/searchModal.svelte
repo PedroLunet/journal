@@ -110,79 +110,86 @@
 		></button>
 
 		<div
-			class="relative flex w-full max-w-2xl flex-col overflow-hidden rounded-xl border border-white/10 bg-zinc-900/90 shadow-2xl ring-1 ring-black/50 backdrop-blur-xl"
-			transition:fly={{ y: 0, duration: 200, easing: cubicOut, opacity: 0 }}
+			class="relative flex w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl ring-1 ring-black/50"
+			transition:fly={{ y: 10, duration: 250, easing: cubicOut, opacity: 0 }}
 		>
-			<div class="flex items-center p-4">
-				<Search class="mr-4 h-6 w-6 text-zinc-400" strokeWidth={2.5} />
+			<div class="relative flex items-center px-5 py-4">
+				<Search class="mr-3 h-5 w-5 text-zinc-500" strokeWidth={2} />
 				<input
 					bind:this={inputRef}
 					bind:value={query}
 					type="text"
-					placeholder="Spotlight Search..."
-					class="flex-1 bg-transparent text-2xl font-light text-white placeholder-zinc-500 focus:outline-none"
+					placeholder="Search journal..."
+					class="flex-1 bg-transparent text-lg font-normal text-zinc-100 placeholder-zinc-500 focus:outline-none"
 				/>
 				{#if !query}
 					<span
-						class="hidden rounded border border-zinc-700/50 bg-zinc-800/50 px-2 py-1 text-xs font-medium text-zinc-600 sm:inline-block"
+						class="ml-2 hidden rounded border border-zinc-800 bg-zinc-900/50 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 sm:inline-block"
 						>ESC</span
 					>
 				{/if}
 			</div>
 
-			{#if results.length > 0 || query}
-				<div class="h-px w-full bg-white/10"></div>
-			{/if}
-
 			{#if query}
-				<div bind:this={resultsListRef} class="scrollbar-hide max-h-[50vh] overflow-y-auto py-2">
+				<div
+					bind:this={resultsListRef}
+					class="scrollbar-hide max-h-[50vh] space-y-1 overflow-y-auto px-2 pb-2"
+				>
 					{#if results.length === 0}
-						<div class="py-8 text-center text-zinc-500">No results found.</div>
+						<div class="py-6 text-center text-sm text-zinc-500">No matching memories.</div>
 					{:else}
 						{#each results as result, i}
 							<button
 								onclick={() => handleSelect(result.date)}
-								class="flex w-full items-center gap-4 px-4 py-3 text-left transition-colors
-                        {i === selectedIndex ? 'bg-blue-600/20' : 'hover:bg-white/5'}"
+								class="group flex w-full items-center gap-4 rounded-2xl px-3 py-2.5 text-left transition-all duration-200
+                        {i === selectedIndex
+									? 'bg-zinc-800 shadow-sm'
+									: 'text-zinc-400 hover:bg-zinc-800/40'}"
 							>
-								{#if i === selectedIndex}
-									<div class="absolute left-0 h-10 w-1 rounded-r bg-blue-500"></div>
-								{/if}
-
 								<div
-									class="flex h-10 w-10 flex-col items-center justify-center rounded border border-white/5 bg-zinc-800 text-zinc-300"
+									class="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl border border-zinc-800/50 bg-zinc-950 text-zinc-400 transition-colors group-hover:border-zinc-700"
 								>
-									<span class="text-[9px] font-bold uppercase"
+									<span class="text-[9px] font-bold tracking-wider uppercase"
 										>{result.date.toLocaleString('default', { month: 'short' })}</span
 									>
-									<span class="text-sm leading-none font-bold">{result.date.getDate()}</span>
+									<span class="text-sm leading-none font-bold text-zinc-200"
+										>{result.date.getDate()}</span
+									>
 								</div>
 
 								<div class="min-w-0 flex-1">
 									<div class="mb-0.5 flex items-center gap-2">
-										<span class="text-sm font-medium text-zinc-200">
+										{#if result.mood}
+											<div
+												class="h-1.5 w-1.5 rounded-full"
+												style="background-color: {result.mood}"
+											></div>
+										{/if}
+										<span
+											class="text-xs font-medium {i === selectedIndex
+												? 'text-zinc-200'
+												: 'text-zinc-500 group-hover:text-zinc-300'}"
+										>
 											{result.date.toLocaleDateString('en-US', {
 												weekday: 'long',
 												year: 'numeric'
 											})}
 										</span>
-										{#if result.mood}
-											<div
-												class="h-2 w-2 rounded-full"
-												style="background-color: {result.mood}"
-											></div>
-										{/if}
 									</div>
-									<p class="truncate text-sm text-zinc-400">
+									<p
+										class="truncate text-sm {i === selectedIndex
+											? 'text-zinc-300'
+											: 'text-zinc-500'}"
+									>
 										{@html result.snippet.replace(
 											new RegExp(`(${query})`, 'gi'),
-											'<span class="text-white font-semibold underline decoration-salmon/50">$1</span>'
+											'<span class="text-salmon font-medium">$1</span>'
 										)}
 									</p>
 								</div>
 
 								{#if i === selectedIndex}
-									<ArrowRight class="ml-2 h-4 w-4 animate-pulse text-blue-400" />
+									<ArrowRight class="h-4 w-4 shrink-0 text-zinc-500" />
 								{/if}
 							</button>
 						{/each}
