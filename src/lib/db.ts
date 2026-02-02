@@ -35,6 +35,8 @@ async function base64ToBlob(base64: string): Promise<Blob> {
 const DB_NAME = 'journal_db';
 const STORE_NAME = 'entries';
 
+export type ImportStrategy = 'merge' | 'overwrite' | 'keep_old';
+
 export const db = {
 	async getDB() {
 		return openDB<JournalDB>(DB_NAME, 1, {
@@ -44,6 +46,12 @@ export const db = {
 				}
 			}
 		});
+	},
+
+	async hasEntries(): Promise<boolean> {
+		const db = await this.getDB();
+		const count = await db.count(STORE_NAME);
+		return count > 0;
 	},
 
 	async getAllEntries() {
@@ -71,7 +79,6 @@ export const db = {
 
 	async exportBackup(): Promise<string> {
 		const entries = await this.getAllEntries();
-
 		const exportData: Record<string, SerializedJournalEntry> = {};
 
 		for (const [dateId, entry] of Object.entries(entries)) {
@@ -84,25 +91,46 @@ export const db = {
 				images: imagesBase64
 			};
 		}
-
 		return JSON.stringify(exportData, null, 2);
 	},
 
-	async importBackup(jsonString: string): Promise<void> {
+	async importBackup(jsonString: string, strategy: ImportStrategy = 'keep_old'): Promise<void> {
 		try {
-			const data = JSON.parse(jsonString) as Record<string, SerializedJournalEntry>;
+			const backupData = JSON.parse(jsonString) as Record<string, SerializedJournalEntry>;
+			const currentEntries = await this.getAllEntries();
 
-			for (const [dateId, entry] of Object.entries(data)) {
-				const rawImages = entry.images || [];
-				const imagesBlobs = await Promise.all(rawImages.map(base64ToBlob));
+			for (const [dateId, backupEntry] of Object.entries(backupData)) {
+				const rawImages = backupEntry.images || [];
+				const backupImagesBlobs = await Promise.all(rawImages.map(base64ToBlob));
 
-				const newEntry: JournalEntry = {
-					text: entry.text || '',
-					mood: entry.mood,
-					images: imagesBlobs
+				const existingEntry = currentEntries[dateId];
+
+				let finalEntry: JournalEntry = {
+					text: backupEntry.text || '',
+					mood: backupEntry.mood,
+					images: backupImagesBlobs
 				};
 
-				await this.saveEntry(dateId, newEntry);
+				if (existingEntry) {
+					if (strategy === 'keep_old') {
+						continue;
+					}
+
+					if (strategy === 'merge') {
+						const combinedText = `== OLD ==\n${existingEntry.text}\n\n== NEW ==\n${backupEntry.text || ''}`;
+
+						const combinedImages =
+							backupImagesBlobs.length > 0 ? backupImagesBlobs : existingEntry.images || [];
+
+						finalEntry = {
+							text: combinedText,
+							mood: backupEntry.mood || existingEntry.mood,
+							images: combinedImages
+						};
+					}
+				}
+
+				await this.saveEntry(dateId, finalEntry);
 			}
 		} catch (e) {
 			console.error('Import failed', e);
@@ -122,17 +150,14 @@ export const db = {
 
 				for (const [key, val] of Object.entries(parsed)) {
 					const oldVal = val as { text: string; mood?: string };
-
 					const newEntry: JournalEntry = {
 						text: oldVal.text,
 						mood: oldVal.mood,
 						images: []
 					};
-
 					await tx.store.put(newEntry, key);
 				}
 				await tx.done;
-
 				localStorage.removeItem('journal_entries');
 			} catch (e) {
 				console.error('Migration failed', e);
