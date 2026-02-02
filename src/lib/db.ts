@@ -84,7 +84,8 @@ export const db = {
 				images: imagesBase64
 			};
 		}
-		return JSON.stringify(exportData);
+
+		return JSON.stringify(exportData, null, 2);
 	},
 
 	async importBackup(jsonString: string): Promise<void> {
@@ -93,7 +94,6 @@ export const db = {
 
 			for (const [dateId, entry] of Object.entries(data)) {
 				const rawImages = entry.images || [];
-
 				const imagesBlobs = await Promise.all(rawImages.map(base64ToBlob));
 
 				const newEntry: JournalEntry = {
