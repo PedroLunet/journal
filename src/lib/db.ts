@@ -5,12 +5,31 @@ export interface JournalEntry {
 	mood?: string;
 	images?: Blob[];
 }
+interface SerializedJournalEntry {
+	text: string;
+	mood?: string;
+	images?: string[];
+}
 
 interface JournalDB extends DBSchema {
 	entries: {
 		key: string;
 		value: JournalEntry;
 	};
+}
+
+function blobToBase64(blob: Blob): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result as string);
+		reader.onerror = reject;
+		reader.readAsDataURL(blob);
+	});
+}
+
+async function base64ToBlob(base64: string): Promise<Blob> {
+	const res = await fetch(base64);
+	return res.blob();
 }
 
 const DB_NAME = 'journal_db';
@@ -48,6 +67,47 @@ export const db = {
 	async deleteEntry(dateId: string) {
 		const db = await this.getDB();
 		return db.delete(STORE_NAME, dateId);
+	},
+
+	async exportBackup(): Promise<string> {
+		const entries = await this.getAllEntries();
+
+		const exportData: Record<string, SerializedJournalEntry> = {};
+
+		for (const [dateId, entry] of Object.entries(entries)) {
+			const currentImages = entry.images || [];
+			const imagesBase64 = await Promise.all(currentImages.map(blobToBase64));
+
+			exportData[dateId] = {
+				text: entry.text,
+				mood: entry.mood,
+				images: imagesBase64
+			};
+		}
+		return JSON.stringify(exportData);
+	},
+
+	async importBackup(jsonString: string): Promise<void> {
+		try {
+			const data = JSON.parse(jsonString) as Record<string, SerializedJournalEntry>;
+
+			for (const [dateId, entry] of Object.entries(data)) {
+				const rawImages = entry.images || [];
+
+				const imagesBlobs = await Promise.all(rawImages.map(base64ToBlob));
+
+				const newEntry: JournalEntry = {
+					text: entry.text || '',
+					mood: entry.mood,
+					images: imagesBlobs
+				};
+
+				await this.saveEntry(dateId, newEntry);
+			}
+		} catch (e) {
+			console.error('Import failed', e);
+			throw new Error('Invalid backup file');
+		}
 	},
 
 	async migrateFromLocalStorage() {
