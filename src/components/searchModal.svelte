@@ -115,13 +115,15 @@
 		>
 			<div class="relative flex items-center px-5 py-4">
 				<Search class="mr-3 h-5 w-5 text-zinc-500" strokeWidth={2} />
+
 				<input
 					bind:this={inputRef}
 					bind:value={query}
 					type="text"
 					placeholder="Search journal..."
-					class="flex-1 bg-transparent text-lg font-normal text-zinc-100 placeholder-zinc-500 focus:outline-none"
+					class="flex-1 border-none bg-transparent text-lg font-normal text-zinc-100 placeholder-zinc-500 caret-salmon focus:ring-0 focus:outline-none"
 				/>
+
 				{#if !query}
 					<span
 						class="ml-2 hidden rounded border border-zinc-800 bg-zinc-900/50 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 sm:inline-block"
