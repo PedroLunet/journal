@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { db } from '../lib/db';
-	import { Download, Upload, X } from '@lucide/svelte';
+	import { db, type ImportStrategy } from '../lib/db';
+	import { Download, Upload, X, TriangleAlert } from '@lucide/svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
@@ -14,10 +14,18 @@
 	let isImporting = $state(false);
 	let fileInput: HTMLInputElement = $state()!;
 
-	function handleKeydown(e: KeyboardEvent) {
-		if (isOpen && e.key === 'Escape') {
-			onClose();
+	let importStep = $state<'idle' | 'conflict'>('idle');
+	let pendingFileString = $state<string | null>(null);
+
+	$effect(() => {
+		if (!isOpen) {
+			importStep = 'idle';
+			pendingFileString = null;
 		}
+	});
+
+	function handleKeydown(e: KeyboardEvent) {
+		if (isOpen && e.key === 'Escape') onClose();
 	}
 
 	async function handleExport() {
@@ -26,7 +34,6 @@
 			const jsonString = await db.exportBackup();
 			const blob = new Blob([jsonString], { type: 'application/json' });
 			const url = URL.createObjectURL(blob);
-
 			const a = document.createElement('a');
 			a.href = url;
 			a.download = `journal-backup-${new Date().toISOString().split('T')[0]}.json`;
@@ -42,21 +49,49 @@
 		}
 	}
 
-	async function handleImport(e: Event) {
+	async function handleFileSelect(e: Event) {
 		const target = e.target as HTMLInputElement;
 		if (!target.files?.length) return;
 
 		const file = target.files[0];
-		if (!confirm('This will merge the backup with your current entries. Continue?')) {
-			target.value = '';
-			return;
-		}
-
-		isImporting = true;
 
 		try {
 			const text = await file.text();
-			await db.importBackup(text);
+			const hasExisting = await db.hasEntries();
+
+			if (hasExisting) {
+				pendingFileString = text;
+				importStep = 'conflict';
+			} else {
+				await executeImport(text, 'overwrite');
+			}
+		} catch (err) {
+			console.error(err);
+			alert('Failed to read file');
+		} finally {
+			if (fileInput) fileInput.value = '';
+		}
+	}
+
+	function confirmMerge() {
+		if (!pendingFileString) return;
+
+		const confirmed = confirm(
+			'⚠️ PHOTO WARNING\n\n' +
+				'Merging will combine your text entries.\n\n' +
+				'However, if a day has a photo in BOTH your current journal and the backup, the BACKUP PHOTO will overwrite your current one.\n\n' +
+				'Do you want to proceed?'
+		);
+
+		if (confirmed) {
+			executeImport(pendingFileString, 'merge');
+		}
+	}
+
+	async function executeImport(jsonString: string, strategy: ImportStrategy) {
+		isImporting = true;
+		try {
+			await db.importBackup(jsonString, strategy);
 			alert('Backup restored successfully!');
 			onImportSuccess();
 			onClose();
@@ -65,7 +100,8 @@
 			console.error(err);
 		} finally {
 			isImporting = false;
-			if (fileInput) fileInput.value = '';
+			importStep = 'idle';
+			pendingFileString = null;
 		}
 	}
 
@@ -102,64 +138,115 @@
 			</button>
 
 			<div class="p-6">
-				<h2 class="mb-2 text-xl font-bold text-salmon">Data & Backup</h2>
-				<p class="mb-6 text-sm text-zinc-400">
-					Your journal is stored locally on this device. Save a backup to keep your memories safe.
-				</p>
+				{#if importStep === 'idle'}
+					<h2 class="mb-2 text-xl font-bold text-salmon">Data & Backup</h2>
+					<p class="mb-6 text-sm text-zinc-400">
+						Your journal is stored locally on this device. Save a backup to keep your memories safe.
+					</p>
 
-				<div class="space-y-3">
-					<button
-						onclick={handleExport}
-						disabled={isExporting}
-						class="group hover:bg-zinc-750 flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:bg-zinc-700"
-					>
-						<div>
-							<div class="font-medium text-zinc-200 group-hover:text-white">Download Backup</div>
-							<div class="text-xs text-zinc-500 group-hover:text-zinc-400">
-								Save entries and photos as a single file
+					<div class="space-y-3">
+						<button
+							onclick={handleExport}
+							disabled={isExporting}
+							class="group hover:bg-zinc-750 flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:bg-zinc-700"
+						>
+							<div>
+								<div class="font-medium text-zinc-200 group-hover:text-white">Download Backup</div>
+								<div class="text-xs text-zinc-500 group-hover:text-zinc-400">
+									Save entries and photos as a single file
+								</div>
 							</div>
-						</div>
-						{#if isExporting}
-							<div
-								class="h-5 w-5 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
-							></div>
-						{:else}
-							<Download
-								class="h-5 w-5 text-zinc-400 transition-transform duration-300 group-hover:scale-110 group-hover:text-salmon"
-							/>
-						{/if}
-					</button>
+							{#if isExporting}
+								<div
+									class="h-5 w-5 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
+								></div>
+							{:else}
+								<Download
+									class="h-5 w-5 text-zinc-400 transition-transform duration-300 group-hover:scale-110 group-hover:text-salmon"
+								/>
+							{/if}
+						</button>
+
+						<button
+							onclick={triggerFileSelect}
+							disabled={isImporting}
+							class="group hover:bg-zinc-750 flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:bg-zinc-700"
+						>
+							<div>
+								<div class="font-medium text-zinc-200 group-hover:text-white">Restore Backup</div>
+								<div class="text-xs text-zinc-500 group-hover:text-zinc-400">
+									Import a previously saved JSON file
+								</div>
+							</div>
+							{#if isImporting}
+								<div
+									class="h-5 w-5 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
+								></div>
+							{:else}
+								<Upload
+									class="h-5 w-5 text-zinc-400 transition-transform duration-300 group-hover:scale-110 group-hover:text-emerald-400"
+								/>
+							{/if}
+						</button>
+					</div>
+				{:else}
+					<div class="mb-2 flex items-center gap-2 text-amber-500">
+						<TriangleAlert class="h-6 w-6" />
+						<h2 class="text-xl font-bold text-zinc-100">Existing Data Found</h2>
+					</div>
+
+					<p class="mb-6 text-sm text-zinc-400">
+						You already have journal entries. How would you like to handle dates that exist in both
+						your current journal and the backup?
+					</p>
+
+					<div class="space-y-3">
+						<button
+							onclick={() => pendingFileString && executeImport(pendingFileString, 'keep_old')}
+							class="w-full rounded-xl border border-zinc-700 bg-transparent p-4 text-left transition-colors hover:bg-zinc-800"
+						>
+							<div class="font-bold text-zinc-200">Keep Current</div>
+							<div class="text-xs text-zinc-500">
+								Keep my current entries. Only import new days.
+							</div>
+						</button>
+
+						<button
+							onclick={confirmMerge}
+							class="w-full rounded-xl bg-zinc-800 p-4 text-left shadow-md ring-1 ring-transparent transition-all ring-inset hover:bg-zinc-700 hover:ring-salmon/50"
+						>
+							<div class="font-bold text-salmon">Merge Both</div>
+							<div class="text-xs text-zinc-400">
+								Combine text. Backup photo overwrites if conflict.
+							</div>
+						</button>
+
+						<button
+							onclick={() => pendingFileString && executeImport(pendingFileString, 'overwrite')}
+							class="w-full rounded-xl border border-rose/20 bg-rose/5 p-4 text-left transition-colors hover:border-rose/40 hover:bg-rose/10"
+						>
+							<div class="font-bold text-rose">Replace with Backup</div>
+							<div class="text-xs text-rose/70">
+								Overwrite my current entries with the backup version.
+							</div>
+						</button>
+					</div>
 
 					<button
-						onclick={triggerFileSelect}
-						disabled={isImporting}
-						class="group hover:bg-zinc-750 flex w-full items-center justify-between rounded-xl bg-zinc-800 p-4 text-left shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 active:scale-[0.98] active:bg-zinc-700"
+						onclick={() => (importStep = 'idle')}
+						class="mt-4 w-full text-center text-sm text-zinc-500 hover:text-zinc-300"
 					>
-						<div>
-							<div class="font-medium text-zinc-200 group-hover:text-white">Restore Backup</div>
-							<div class="text-xs text-zinc-500 group-hover:text-zinc-400">
-								Import a previously saved JSON file
-							</div>
-						</div>
-						{#if isImporting}
-							<div
-								class="h-5 w-5 animate-spin rounded-full border-2 border-zinc-500 border-t-transparent"
-							></div>
-						{:else}
-							<Upload
-								class="h-5 w-5 text-zinc-400 transition-transform duration-300 group-hover:scale-110 group-hover:text-emerald-400"
-							/>
-						{/if}
+						Cancel
 					</button>
+				{/if}
 
-					<input
-						bind:this={fileInput}
-						type="file"
-						accept=".json"
-						class="hidden"
-						onchange={handleImport}
-					/>
-				</div>
+				<input
+					bind:this={fileInput}
+					type="file"
+					accept=".json"
+					class="hidden"
+					onchange={handleFileSelect}
+				/>
 			</div>
 		</div>
 	</div>
