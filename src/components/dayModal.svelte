@@ -144,14 +144,33 @@
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
+		if (!isOpen) return;
+
 		if (e.key === 'Escape') {
 			if (showDeleteConfirm) showDeleteConfirm = false;
 			else if (isFullScreen) isFullScreen = false;
 			else if (showPicker) showPicker = false;
 			else closeAndSave();
-		} else if (!isFullScreen && !showDeleteConfirm) {
-			if (e.key === 'ArrowLeft') handleNav('prev');
-			else if (e.key === 'ArrowRight' && canGoNext) handleNav('next');
+			return;
+		}
+
+		if (!isFullScreen && !showDeleteConfirm && !showPicker) {
+			const target = e.target as HTMLElement;
+			const isEditing =
+				target.tagName === 'TEXTAREA' ||
+				(target.tagName === 'INPUT' && target.getAttribute('type') === 'text');
+
+			const isModifier = e.metaKey || e.ctrlKey;
+
+			if (!isEditing || isModifier) {
+				if (e.key === 'ArrowLeft') {
+					if (isEditing) e.preventDefault();
+					handleNav('prev');
+				} else if (e.key === 'ArrowRight' && canGoNext) {
+					if (isEditing) e.preventDefault();
+					handleNav('next');
+				}
+			}
 		}
 	}
 
@@ -179,18 +198,12 @@
 		tabindex="0"
 		onmousedown={handleBackdropMouseDown}
 		onmouseup={handleBackdropMouseUp}
-		onkeydown={(e) => {
-			if (e.key === 'Escape') closeAndSave();
-		}}
 	>
 		<div
 			class="flex max-h-[90vh] w-full max-w-xl cursor-default flex-col rounded-2xl border border-white/10 bg-zinc-900 p-6 shadow-2xl transition-all"
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
-			onclick={(e) => e.stopPropagation()}
-			onmousedown={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-6 flex shrink-0 items-center justify-between">
 				<button

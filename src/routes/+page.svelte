@@ -1,5 +1,6 @@
 <script lang="ts">
 	import DayModal from '../components/dayModal.svelte';
+	import SettingsModal from '../components/settingsModal.svelte';
 	import CircularProgress from '../components/progressBar.svelte';
 	import { onMount } from 'svelte';
 	import { db, type JournalEntry } from '../lib/db';
@@ -8,6 +9,7 @@
 
 	let selectedDate = $state<Date | null>(null);
 	let isModalOpen = $state(false);
+	let isSettingsOpen = $state(false);
 
 	let dotElements = $state<HTMLElement[]>([]);
 	let dotPositions: { x: number; y: number }[] = [];
@@ -277,6 +279,35 @@
 				size={80}
 				strokeWidth={5}
 			/>
+
+			<div class="h-10 w-px bg-zinc-800"></div>
+
+			<div class="flex gap-2">
+				<button
+					onclick={() => (isSettingsOpen = true)}
+					class="group rounded-full bg-zinc-900/50 p-3 transition-all hover:bg-zinc-800 hover:text-salmon active:scale-95"
+					aria-label="Settings"
+					title="Backup & Data"
+				>
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						width="20"
+						height="20"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						class="text-zinc-400 transition-colors group-hover:text-salmon"
+					>
+						<path
+							d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.09a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+						/>
+						<circle cx="12" cy="12" r="3" />
+					</svg>
+				</button>
+			</div>
 		</div>
 	</header>
 
@@ -327,5 +358,11 @@
 		onSave={(text, mood, images) => handleSave(text, mood, images)}
 		onPrev={handlePrevDay}
 		onNext={handleNextDay}
+	/>
+
+	<SettingsModal
+		isOpen={isSettingsOpen}
+		onClose={() => (isSettingsOpen = false)}
+		onImportSuccess={() => location.reload()}
 	/>
 </div>

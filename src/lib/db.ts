@@ -5,6 +5,11 @@ export interface JournalEntry {
 	mood?: string;
 	images?: Blob[];
 }
+interface SerializedJournalEntry {
+	text: string;
+	mood?: string;
+	images?: string[];
+}
 
 interface JournalDB extends DBSchema {
 	entries: {
@@ -13,8 +18,24 @@ interface JournalDB extends DBSchema {
 	};
 }
 
+function blobToBase64(blob: Blob): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onloadend = () => resolve(reader.result as string);
+		reader.onerror = reject;
+		reader.readAsDataURL(blob);
+	});
+}
+
+async function base64ToBlob(base64: string): Promise<Blob> {
+	const res = await fetch(base64);
+	return res.blob();
+}
+
 const DB_NAME = 'journal_db';
 const STORE_NAME = 'entries';
+
+export type ImportStrategy = 'merge' | 'overwrite' | 'keep_old';
 
 export const db = {
 	async getDB() {
@@ -25,6 +46,12 @@ export const db = {
 				}
 			}
 		});
+	},
+
+	async hasEntries(): Promise<boolean> {
+		const db = await this.getDB();
+		const count = await db.count(STORE_NAME);
+		return count > 0;
 	},
 
 	async getAllEntries() {
@@ -50,6 +77,67 @@ export const db = {
 		return db.delete(STORE_NAME, dateId);
 	},
 
+	async exportBackup(): Promise<string> {
+		const entries = await this.getAllEntries();
+		const exportData: Record<string, SerializedJournalEntry> = {};
+
+		for (const [dateId, entry] of Object.entries(entries)) {
+			const currentImages = entry.images || [];
+			const imagesBase64 = await Promise.all(currentImages.map(blobToBase64));
+
+			exportData[dateId] = {
+				text: entry.text,
+				mood: entry.mood,
+				images: imagesBase64
+			};
+		}
+		return JSON.stringify(exportData, null, 2);
+	},
+
+	async importBackup(jsonString: string, strategy: ImportStrategy = 'keep_old'): Promise<void> {
+		try {
+			const backupData = JSON.parse(jsonString) as Record<string, SerializedJournalEntry>;
+			const currentEntries = await this.getAllEntries();
+
+			for (const [dateId, backupEntry] of Object.entries(backupData)) {
+				const rawImages = backupEntry.images || [];
+				const backupImagesBlobs = await Promise.all(rawImages.map(base64ToBlob));
+
+				const existingEntry = currentEntries[dateId];
+
+				let finalEntry: JournalEntry = {
+					text: backupEntry.text || '',
+					mood: backupEntry.mood,
+					images: backupImagesBlobs
+				};
+
+				if (existingEntry) {
+					if (strategy === 'keep_old') {
+						continue;
+					}
+
+					if (strategy === 'merge') {
+						const combinedText = `== OLD ==\n${existingEntry.text}\n\n== NEW ==\n${backupEntry.text || ''}`;
+
+						const combinedImages =
+							backupImagesBlobs.length > 0 ? backupImagesBlobs : existingEntry.images || [];
+
+						finalEntry = {
+							text: combinedText,
+							mood: backupEntry.mood || existingEntry.mood,
+							images: combinedImages
+						};
+					}
+				}
+
+				await this.saveEntry(dateId, finalEntry);
+			}
+		} catch (e) {
+			console.error('Import failed', e);
+			throw new Error('Invalid backup file');
+		}
+	},
+
 	async migrateFromLocalStorage() {
 		if (typeof window === 'undefined') return;
 
@@ -62,17 +150,14 @@ export const db = {
 
 				for (const [key, val] of Object.entries(parsed)) {
 					const oldVal = val as { text: string; mood?: string };
-
 					const newEntry: JournalEntry = {
 						text: oldVal.text,
 						mood: oldVal.mood,
 						images: []
 					};
-
 					await tx.store.put(newEntry, key);
 				}
 				await tx.done;
-
 				localStorage.removeItem('journal_entries');
 			} catch (e) {
 				console.error('Migration failed', e);
