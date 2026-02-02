@@ -1,6 +1,14 @@
 <script lang="ts">
 	import { db, type ImportStrategy } from '../lib/db';
-	import { Download, Upload, X, TriangleAlert } from '@lucide/svelte';
+	import {
+		Download,
+		Upload,
+		X,
+		TriangleAlert,
+		Check,
+		CircleAlert,
+		ChevronLeft
+	} from '@lucide/svelte';
 	import { fade, fly } from 'svelte/transition';
 	import { cubicOut } from 'svelte/easing';
 
@@ -14,13 +22,19 @@
 	let isImporting = $state(false);
 	let fileInput: HTMLInputElement = $state()!;
 
-	let importStep = $state<'idle' | 'conflict'>('idle');
+	type Step = 'idle' | 'conflict' | 'confirm_merge' | 'success' | 'error';
+	let importStep = $state<Step>('idle');
+
 	let pendingFileString = $state<string | null>(null);
+	let statusMessage = $state('');
 
 	$effect(() => {
 		if (!isOpen) {
-			importStep = 'idle';
-			pendingFileString = null;
+			setTimeout(() => {
+				importStep = 'idle';
+				pendingFileString = null;
+				statusMessage = '';
+			}, 300);
 		}
 	});
 
@@ -42,8 +56,9 @@
 			document.body.removeChild(a);
 			URL.revokeObjectURL(url);
 		} catch (err) {
-			alert('Export failed');
 			console.error(err);
+			statusMessage = 'Failed to generate backup file.';
+			importStep = 'error';
 		} finally {
 			isExporting = false;
 		}
@@ -67,42 +82,39 @@
 			}
 		} catch (err) {
 			console.error(err);
-			alert('Failed to read file');
+			statusMessage = 'Failed to read the selected file.';
+			importStep = 'error';
 		} finally {
 			if (fileInput) fileInput.value = '';
 		}
 	}
 
-	function confirmMerge() {
+	function goToMergeConfirm() {
 		if (!pendingFileString) return;
-
-		const confirmed = confirm(
-			'⚠️ PHOTO WARNING\n\n' +
-				'Merging will combine your text entries.\n\n' +
-				'However, if a day has a photo in BOTH your current journal and the backup, the BACKUP PHOTO will overwrite your current one.\n\n' +
-				'Do you want to proceed?'
-		);
-
-		if (confirmed) {
-			executeImport(pendingFileString, 'merge');
-		}
+		importStep = 'confirm_merge';
 	}
 
 	async function executeImport(jsonString: string, strategy: ImportStrategy) {
 		isImporting = true;
 		try {
 			await db.importBackup(jsonString, strategy);
-			alert('Backup restored successfully!');
-			onImportSuccess();
-			onClose();
+			statusMessage = 'Backup restored successfully!';
+			importStep = 'success';
 		} catch (err) {
-			alert('Failed to import backup. File might be corrupted.');
 			console.error(err);
+			statusMessage = 'The backup file appears to be corrupted or invalid.';
+			importStep = 'error';
 		} finally {
 			isImporting = false;
-			importStep = 'idle';
 			pendingFileString = null;
 		}
+	}
+
+	function handleSuccessClick() {
+		onClose();
+		setTimeout(() => {
+			onImportSuccess();
+		}, 100);
 	}
 
 	function triggerFileSelect() {
@@ -189,15 +201,15 @@
 							{/if}
 						</button>
 					</div>
-				{:else}
+				{:else if importStep === 'conflict'}
 					<div class="mb-2 flex items-center gap-2 text-amber-500">
 						<TriangleAlert class="h-6 w-6" />
 						<h2 class="text-xl font-bold text-zinc-100">Existing Data Found</h2>
 					</div>
 
 					<p class="mb-6 text-sm text-zinc-400">
-						You already have journal entries. How would you like to handle dates that exist in both
-						your current journal and the backup?
+						How would you like to handle dates that exist in both your current journal and the
+						backup?
 					</p>
 
 					<div class="space-y-3">
@@ -212,7 +224,7 @@
 						</button>
 
 						<button
-							onclick={confirmMerge}
+							onclick={goToMergeConfirm}
 							class="w-full rounded-xl bg-zinc-800 p-4 text-left shadow-md ring-1 ring-transparent transition-all ring-inset hover:bg-zinc-700 hover:ring-salmon/50"
 						>
 							<div class="font-bold text-salmon">Merge Both</div>
@@ -238,6 +250,68 @@
 					>
 						Cancel
 					</button>
+				{:else if importStep === 'confirm_merge'}
+					<div class="mb-6 flex flex-col items-center text-center">
+						<div class="mb-4 rounded-full bg-amber-500/10 p-4">
+							<TriangleAlert class="h-10 w-10 text-amber-500" />
+						</div>
+						<h2 class="text-xl font-bold text-zinc-100">Photo Conflict Warning</h2>
+					</div>
+
+					<p class="mb-6 text-sm leading-relaxed text-zinc-400">
+						Merging will combine your text entries into one.
+						<br /><br />
+						<span class="font-bold text-amber-500">However</span>, if a day has a photo in
+						<strong class="text-zinc-200">BOTH</strong>
+						your current journal and the backup, the
+						<strong class="text-zinc-200">BACKUP PHOTO</strong> will overwrite your current one.
+					</p>
+
+					<div class="grid grid-cols-2 gap-3">
+						<button
+							onclick={() => (importStep = 'conflict')}
+							class="rounded-xl border border-zinc-700 p-3 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800"
+						>
+							Back
+						</button>
+						<button
+							onclick={() => pendingFileString && executeImport(pendingFileString, 'merge')}
+							class="rounded-xl bg-amber-600/20 p-3 text-sm font-bold text-amber-500 ring-1 ring-amber-500/50 transition-colors ring-inset hover:bg-amber-600/30"
+						>
+							I Understand
+						</button>
+					</div>
+				{:else if importStep === 'success'}
+					<div class="flex flex-col items-center py-6 text-center">
+						<div class="mb-4 rounded-full bg-emerald-500/10 p-4">
+							<Check class="h-12 w-12 text-emerald-500" />
+						</div>
+						<h2 class="mb-2 text-xl font-bold text-white">Success!</h2>
+						<p class="text-sm text-zinc-400">{statusMessage}</p>
+
+						<button
+							onclick={handleSuccessClick}
+							class="mt-8 w-full rounded-xl bg-zinc-800 p-3 font-medium text-zinc-200 hover:bg-zinc-700"
+						>
+							Done
+						</button>
+					</div>
+				{:else if importStep === 'error'}
+					<div class="flex flex-col items-center py-6 text-center">
+						<div class="mb-4 rounded-full bg-rose-500/10 p-4">
+							<CircleAlert class="h-12 w-12 text-rose-500" />
+						</div>
+						<h2 class="mb-2 text-xl font-bold text-white">Error</h2>
+						<p class="text-sm text-zinc-400">{statusMessage}</p>
+
+						<button
+							onclick={() => (importStep = 'idle')}
+							class="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-transparent p-3 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+						>
+							<ChevronLeft class="h-4 w-4" />
+							Back to Menu
+						</button>
+					</div>
 				{/if}
 
 				<input
