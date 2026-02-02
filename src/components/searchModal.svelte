@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { fade, fly } from 'svelte/transition';
+	import { flip } from 'svelte/animate';
 	import { cubicOut } from 'svelte/easing';
-	import { Search, ArrowRight } from '@lucide/svelte';
+	import { Search, ArrowRight, Calendar } from '@lucide/svelte';
 	import type { JournalEntry } from '../lib/db';
 
 	let { isOpen, onClose, entries, onSelectDate } = $props<{
@@ -27,6 +28,7 @@
 			.map(([dateStr, entry]) => {
 				const typedEntry = entry as JournalEntry;
 				return {
+					id: dateStr,
 					date: new Date(dateStr),
 					text: typedEntry.text,
 					mood: typedEntry.mood,
@@ -48,6 +50,10 @@
 	$effect(() => {
 		if (results) selectedIndex = 0;
 	});
+
+	function escapeRegExp(string: string) {
+		return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	}
 
 	function getSnippet(text: string, query: string): string {
 		const index = text.toLowerCase().indexOf(query);
@@ -111,11 +117,10 @@
 
 		<div
 			class="relative flex w-full max-w-xl flex-col overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900 shadow-2xl ring-1 ring-black/50"
-			transition:fly={{ y: 10, duration: 250, easing: cubicOut, opacity: 0 }}
+			transition:fly={{ y: 15, duration: 300, easing: cubicOut, opacity: 0 }}
 		>
-			<div class="relative flex items-center px-5 py-4">
+			<div class="relative z-10 flex items-center bg-zinc-900 px-5 py-4">
 				<Search class="mr-3 h-5 w-5 text-zinc-500" strokeWidth={2} />
-
 				<input
 					bind:this={inputRef}
 					bind:value={query}
@@ -123,7 +128,6 @@
 					placeholder="Search journal..."
 					class="flex-1 border-none bg-transparent text-lg font-normal text-zinc-100 placeholder-zinc-500 caret-salmon focus:ring-0 focus:outline-none"
 				/>
-
 				{#if !query}
 					<span
 						class="ml-2 hidden rounded border border-zinc-800 bg-zinc-900/50 px-1.5 py-0.5 text-[10px] font-medium text-zinc-600 sm:inline-block"
@@ -135,18 +139,25 @@
 			{#if query}
 				<div
 					bind:this={resultsListRef}
-					class="scrollbar-hide max-h-[50vh] space-y-1 overflow-y-auto px-2 pb-2"
+					class="relative z-0 scrollbar-hide max-h-[50vh] space-y-1 overflow-y-auto px-2 py-2"
 				>
 					{#if results.length === 0}
-						<div class="py-6 text-center text-sm text-zinc-500">No matching memories.</div>
+						<div
+							in:fade={{ duration: 150 }}
+							class="flex flex-col items-center gap-2 py-8 text-center text-sm text-zinc-500"
+						>
+							<Calendar class="h-8 w-8 text-zinc-800" />
+							<span>No memories found.</span>
+						</div>
 					{:else}
-						{#each results as result, i}
+						{#each results as result, i (result.id)}
 							<button
+								animate:flip={{ duration: 250, easing: cubicOut }}
 								onclick={() => handleSelect(result.date)}
-								class="group flex w-full items-center gap-4 rounded-2xl px-3 py-2.5 text-left transition-all duration-200
+								class="group flex w-full items-center gap-4 rounded-2xl border border-transparent px-3 py-2.5 text-left transition-all duration-200 ease-out
                         {i === selectedIndex
-									? 'bg-zinc-800 shadow-sm'
-									: 'text-zinc-400 hover:bg-zinc-800/40'}"
+									? 'z-10 scale-[1.02] border-white/5 bg-zinc-800 shadow-lg'
+									: 'z-0 text-zinc-400 hover:scale-[1.01] hover:border-white/5 hover:bg-zinc-800/50 hover:shadow-md'}"
 							>
 								<div
 									class="flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-xl border border-zinc-800/50 bg-zinc-950 text-zinc-400 transition-colors group-hover:border-zinc-700"
@@ -163,12 +174,12 @@
 									<div class="mb-0.5 flex items-center gap-2">
 										{#if result.mood}
 											<div
-												class="h-1.5 w-1.5 rounded-full"
+												class="h-1.5 w-1.5 rounded-full ring-1 ring-black/50"
 												style="background-color: {result.mood}"
 											></div>
 										{/if}
 										<span
-											class="text-xs font-medium {i === selectedIndex
+											class="text-xs font-medium transition-colors {i === selectedIndex
 												? 'text-zinc-200'
 												: 'text-zinc-500 group-hover:text-zinc-300'}"
 										>
@@ -179,20 +190,24 @@
 										</span>
 									</div>
 									<p
-										class="truncate text-sm {i === selectedIndex
+										class="truncate text-sm transition-colors {i === selectedIndex
 											? 'text-zinc-300'
-											: 'text-zinc-500'}"
+											: 'text-zinc-500 group-hover:text-zinc-400'}"
 									>
 										{@html result.snippet.replace(
-											new RegExp(`(${query})`, 'gi'),
-											'<span class="text-salmon font-medium">$1</span>'
+											new RegExp(`(${escapeRegExp(query)})`, 'gi'),
+											'<span class="text-salmon font-bold">$1</span>'
 										)}
 									</p>
 								</div>
 
-								{#if i === selectedIndex}
-									<ArrowRight class="h-4 w-4 shrink-0 text-zinc-500" />
-								{/if}
+								<div class="flex w-4 justify-center">
+									{#if i === selectedIndex}
+										<div in:fly={{ x: -5, duration: 150 }}>
+											<ArrowRight class="h-4 w-4 text-zinc-400" />
+										</div>
+									{/if}
+								</div>
 							</button>
 						{/each}
 					{/if}
