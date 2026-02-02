@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { fade, fly, scale } from 'svelte/transition';
-	import { ChevronRight, ChevronLeft, Image as ImageIcon, X, Maximize2 } from '@lucide/svelte';
+	import {
+		ChevronRight,
+		ChevronLeft,
+		Image as ImageIcon,
+		X,
+		Maximize2,
+		Trash2
+	} from '@lucide/svelte';
 	import ColorPicker from './colorPicker.svelte';
 	import chroma from 'chroma-js';
 
@@ -13,6 +20,7 @@
 		canGoNext?: boolean;
 		onClose: () => void;
 		onSave: (text: string, mood: string, images: Blob[]) => void;
+		onDelete: () => void;
 		onPrev: () => void;
 		onNext: () => void;
 	}
@@ -26,6 +34,7 @@
 		canGoNext = false,
 		onClose,
 		onSave,
+		onDelete,
 		onPrev,
 		onNext
 	}: Props = $props();
@@ -36,6 +45,8 @@
 	let isBackdropClick = false;
 
 	let showDeleteConfirm = $state(false);
+	let showEntryDeleteConfirm = $state(false);
+
 	let fileInput = $state<HTMLInputElement>();
 
 	let images = $state<Blob[]>([]);
@@ -75,6 +86,7 @@
 			showPicker = false;
 			isFullScreen = false;
 			showDeleteConfirm = false;
+			showEntryDeleteConfirm = false;
 			images = [];
 			previewUrls = [];
 
@@ -143,18 +155,30 @@
 		onSave(note, mood, images);
 	}
 
+	function requestEntryDelete() {
+		showEntryDeleteConfirm = true;
+	}
+
+	function confirmEntryDelete() {
+		clearTimeout(saveTimeout);
+		onDelete();
+		showEntryDeleteConfirm = false;
+		onClose();
+	}
+
 	function handleKeydown(e: KeyboardEvent) {
 		if (!isOpen) return;
 
 		if (e.key === 'Escape') {
-			if (showDeleteConfirm) showDeleteConfirm = false;
+			if (showEntryDeleteConfirm) showEntryDeleteConfirm = false;
+			else if (showDeleteConfirm) showDeleteConfirm = false;
 			else if (isFullScreen) isFullScreen = false;
 			else if (showPicker) showPicker = false;
 			else closeAndSave();
 			return;
 		}
 
-		if (!isFullScreen && !showDeleteConfirm && !showPicker) {
+		if (!isFullScreen && !showDeleteConfirm && !showEntryDeleteConfirm && !showPicker) {
 			const target = e.target as HTMLElement;
 			const isEditing =
 				target.tagName === 'TEXTAREA' ||
@@ -204,6 +228,9 @@
 			role="dialog"
 			aria-modal="true"
 			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onmousedown={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
 		>
 			<div class="mb-6 flex shrink-0 items-center justify-between">
 				<button
@@ -324,13 +351,25 @@
 					{/if}
 				</div>
 
-				<button
-					onclick={closeAndSave}
-					class="rounded-lg px-6 py-2 text-sm font-medium transition-colors duration-300 hover:opacity-90 active:scale-95"
-					style="background-color: {mood}; color: {textColor};"
-				>
-					Done!
-				</button>
+				<div class="flex items-center gap-3">
+					{#if note.trim() || images.length > 0}
+						<button
+							onclick={requestEntryDelete}
+							class="flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition-colors hover:bg-zinc-800 hover:text-red-500"
+							title="Delete Entry"
+						>
+							<Trash2 size={18} />
+						</button>
+					{/if}
+
+					<button
+						onclick={closeAndSave}
+						class="rounded-lg px-6 py-2 text-sm font-medium transition-colors duration-300 hover:opacity-90 active:scale-95"
+						style="background-color: {mood}; color: {textColor};"
+					>
+						Done!
+					</button>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -366,6 +405,43 @@
 						onclick={confirmDelete}
 					>
 						Delete
+					</button>
+				</div>
+			</div>
+		</div>
+	{/if}
+
+	{#if showEntryDeleteConfirm}
+		<div
+			transition:fade={{ duration: 150 }}
+			class="fixed inset-0 z-110 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={(e) => e.stopPropagation()}
+			onkeydown={(e) => e.stopPropagation()}
+		>
+			<div
+				class="w-full max-w-sm rounded-xl border border-white/10 bg-zinc-900 p-6 shadow-2xl"
+				transition:scale={{ start: 0.95, duration: 150 }}
+			>
+				<h3 class="text-lg font-semibold text-white">Delete entry?</h3>
+				<p class="mt-2 text-sm text-zinc-400">
+					Are you sure you want to delete this day's entry entirely? This cannot be undone.
+				</p>
+
+				<div class="mt-6 flex justify-end gap-3">
+					<button
+						class="rounded-lg px-4 py-2 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+						onclick={() => (showEntryDeleteConfirm = false)}
+					>
+						Cancel
+					</button>
+					<button
+						class="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-medium text-red-500 transition-colors hover:bg-red-500 hover:text-white"
+						onclick={confirmEntryDelete}
+					>
+						Delete Everything
 					</button>
 				</div>
 			</div>
