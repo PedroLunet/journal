@@ -5,7 +5,7 @@
 	import CircularProgress from '../components/progressBar.svelte';
 	import { onMount } from 'svelte';
 	import { db, type JournalEntry } from '../lib/db';
-	import { Search, Settings } from '@lucide/svelte';
+	import { Search, Settings, Coffee } from '@lucide/svelte';
 
 	let journalEntries = $state<Record<string, JournalEntry>>({});
 
@@ -302,6 +302,21 @@
 			<div class="h-10 w-px bg-zinc-800"></div>
 
 			<div class="flex gap-2">
+				<a
+					href="https://buymeacoffee.com/pedrolunet"
+					target="_blank"
+					rel="noopener noreferrer"
+					class="group flex items-center justify-center rounded-lg bg-zinc-900/50 p-3 transition-all hover:bg-zinc-800 active:scale-95"
+					aria-label="Buy me a coffee"
+					title="Buy me a coffee ☕"
+				>
+					<img
+						src="/bmc.png"
+						alt="BMC Logo"
+						class="h-5 w-5 object-contain opacity-50 grayscale transition-all duration-300 group-hover:scale-110 group-hover:opacity-100 group-hover:grayscale-0"
+					/>
+				</a>
+
 				<button
 					onclick={() => (isSearchOpen = true)}
 					class="group rounded-full bg-zinc-900/50 p-3 transition-all hover:bg-zinc-800 hover:text-salmon active:scale-95"
